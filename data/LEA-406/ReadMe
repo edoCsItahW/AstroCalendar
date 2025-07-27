@@ -1,0 +1,231 @@
+J/A+A/471/1069   Lunar ephemeris long-term development      (Kudryavtsev, 2007)
+================================================================================
+Long-term harmonic development of lunar ephemeris.
+    Kudryavtsev S.M.
+   <Astron. Astrophys. 471, 1069 (2007)>
+   =2007A&A...471.1069K
+================================================================================
+ADC_Keywords: Ephemerides ; Solar system
+Keywords: celestial mechanics - methods: analytical - Moon
+
+Abstract:
+    The aim of this study is to develop new analytical series representing
+    lunar coordinates to accuracy compatible with the accuracy of the
+    modern numerical ephemeris of the Moon.
+
+Description:
+  The files contain numerical coefficients of the Poisson series representing
+  the geocentric ecliptic spherical coordinates of the Moon R, V and U where
+    R is the geocentric distance,
+    V is the spherical longitude,
+    U is the spherical latitude.
+  The series are obtained by spectral analysis of the long-term numerical
+  ephemeris of the Moon LE-405/406 (Standish 1998: JPL IOM 312.F-98-048).
+
+  There are two versions of the Poisson series for lunar coordinates R, V, U:
+  - the complete series, LEA-406a, include 42270 terms of minimal
+    amplitude equivalent to 1 cm and are valid over 1500-2500.
+  - the simplified series, LEA-406b, include 7952 terms of minimal
+    amplitude equivalent to 1 m and are valid over 3000BC-3000AD.
+
+  The formulation of the series is:
+      R = {SUM}[k=1,Records;i=0,2](A_ki_*t^i^*cos(Arg_ki_))
+      V = V0(t) + {SUM}[k=1,Records;i=0,2](A_ki_*t^i^*sin(Arg_ki_))
+      U = {SUM}[k=1,Records;i=0,2](A_ki_*t^i^*sin(Arg_ki_))
+
+  where
+
+  t is the time (TDB) in thousands of Julian years from J2000:
+      t=(JulianDate-2451545.0)/365250.0;
+
+  V0(t) is the mean longitude of the Moon referred to the moving ecliptic and
+     mean equinox of date as given by Simon et al. (1994A&A..282..663S)
+     [or use Eq.(37) of the paper];
+
+  A_ki_ is the amplitude of the "k"th Poisson term of the order i;
+
+  Arg_ki_ is the four-degree time polynomial argument defined as linear
+     combination of integer multipliers of 14 variables (Arg_j_, j=1,14):
+     Delaunay variables l, l', F, D;
+     mean longitude of the ascending node of the Moon {Omega};
+     mean longitudes of eight major planets {lambda}_pl_;
+     and the general precession in longitude p_A_.
+     So that Arg_ki_={SUM}[j=1,14](m_kj_*Arg_j_+phi_ki_),
+     where m_kj_ are the integer multiplies and phi_ki_ are the phases.
+     The expressions for Arg_j_ are given by Simon et al. (1994A&A..282..663S)
+     [or use Eq.(38)-(51) of the paper].
+
+    The lunar coordinates R, V and U given by the series are referred to
+    the moving ecliptic and mean equinox of date. Transformation of the
+    coordinates to the reference frame of the numerical ephemeris
+    LE-405/406 (defined by the mean geoequator and equinox of epoch J2000)
+    should be performed with use of the precession quantities as given by
+    Simon et al. (1994A&A..282..663S) [or use Eq.(52)-(55) of the paper].
+
+    A Fortran 77 subroutine for calculation of lunar rectangular
+    coordinates on the base of the suggested Poisson series and two test
+    examples are also given.
+
+File Summary:
+--------------------------------------------------------------------------------
+  FileName    Lrecl  Records  Explanations
+--------------------------------------------------------------------------------
+ReadMe           80        .  This file
+table6.dat      147     7056 *Complete series for lunar coordinate R
+table7.dat      147    10508 *Complete series for lunar coordinate V
+table8.dat      147     7366 *Complete series for lunar coordinate U
+table9.dat      147     1029 *Simplified series for lunar coordinate R
+table10.dat     147     1753 *Simplified series for lunar coordinate V
+table11.dat     147     1089 *Simplified series for lunar coordinate U
+lea-406.for     108      606 *Fortran 77 subroutine for calculation of lunar
+                              rectangular coordinates
+lea-406a.for    107       57 *Test calculation of lunar rectangular
+                              coordinates on the base of complete series
+lea-406b.for    107       57 *Test calculation of lunar rectangular
+                              coordinates on the base of simplified series
+--------------------------------------------------------------------------------
+Note on table6.dat: The time interval covers the Julian dates 2268932.5
+  (1500/1/1) to 2634166.5 (2500/1/1). The term minimum amplitude (for Poisson
+  terms - at the ends of the time interval) is 1cm. The total number of terms
+  is 10704. The maximum difference between R values given by the complete 
+  Poisson series and numerical ephemeris LE-405/406 is 3.2m.
+
+Note on table7.dat: The time interval covers the Julian dates 2268932.5
+  (1500/1/1) to 2634166.5 (2500/1/1). The term minimum amplitude (for Poisson
+  terms - at the ends of the time interval) is 0.0000055arcsec. The total number
+  of terms is 19116. The maximum difference between V values given by the 
+  complete Poisson series and numerical ephemeris LE-405/406 is 0.0056arcsec.
+
+Note on table8.dat: The time interval covers the Julian dates 2268932.5
+  (1500/1/1) to 2634166.5 (2500/1/1). The term minimum amplitude (for Poisson
+  terms - at the ends of the time interval) is 0.0000055arcsec. The total number
+  of terms is 12450. The maximum difference between U values given by the 
+  complete Poisson series and numerical ephemeris LE-405/406 is 0.0018arcsec.
+
+Note on table9.dat: The time interval covers the Julian dates 625673.5
+  (3000BC/1/1) to 2816787.5 (3000AD/1/1). The term minimum amplitude (for
+  Poisson terms - at the ends of the time interval) is 1m. The total number of
+  terms is 1996. The maximum difference between R values given by the 
+  simplified Poisson series and numerical ephemeris LE-405/406 is 0.20km.
+
+Note on table10.dat: The time interval covers the Julian dates 625673.5
+  (3000BC/1/1) to 2816787.5 (3000AD/1/1). The term minimum amplitude (for
+  Poisson terms - at the ends of the time interval) is 0.00055arcsec. The total
+  number of terms is 3770. The maximum difference between V values given by 
+  the simplified Poisson series and numerical ephemeris LE-405/406 is 
+  0.42arcsec.
+
+Note on table11.dat: The time interval covers the Julian dates 625673.5
+  (3000BC/1/1) to 2816787.5 (3000AD/1/1). The term minimum amplitude (for
+  Poisson terms - at the ends of the time interval) is 0.00055arcsec. The total
+  number of terms is 2186. The maximum difference between U values given by
+  the simplified Poisson series and numerical ephemeris LE-405/406 is 
+  0.33arcsec.
+
+Note on lea-406.for: The subroutine calculates lunar rectangular coordinates on
+  the base of either complete series for lunar spherical coordinates
+  (table6.dat, table7.dat, table8.dat) or of simplified ones
+  (table9.dat, table10.dat, table11.dat).
+  The coordinates are geocentric and referenced to the Earth mean equator and
+  equinox of J2000 (the reference frame of numerical lunar ephemeris
+  LE-405/406).
+  The maximum difference between lunar positions calculated on the base of
+  LE-406 and of the complete series LEA-406a is 10 m over 1500-2500.
+  The maximum difference between lunar positions calculated on the base of
+  LE-406 and of the simplified series LEA-406b is 0.9 km over 3000BC-3000AD.
+
+Note on lea-406a.for: This file gives an example of calling code for
+  calculation of lunar rectangular coordinates on the base of complete
+  LEA-406a series and the relevant test results.
+
+Note on lea-406b.for: This file gives an example of calling code for
+  calculation of lunar rectangular coordinates on the base of simplified
+  LEA-406b series and the relevant test results.
+--------------------------------------------------------------------------------
+
+Byte-by-byte Description of files: table[69].dat
+--------------------------------------------------------------------------------
+   Bytes Format   Units   Label   Explanations
+--------------------------------------------------------------------------------
+   2-  6  I5      ---     Seq     Sequental number of the term
+   9- 11  I3      ---     mk1     Multiplier at the Arg.1, l  (G1)
+  12- 14  I3      ---     mk2     Multiplier at the Arg.2, l' (G1)
+  15- 17  I3      ---     mk3     Multiplier at the Arg.3, F  (G1)
+  18- 20  I3      ---     mk4     Multiplier at the Arg.4, D  (G1)
+  21- 23  I3      ---     mk5     Multiplier at the Arg.5, {Omega} (G1)
+  25- 27  I3      ---     mk6     Multiplier at the Arg.6  (Me) (G1)
+  28- 30  I3      ---     mk7     Multiplier at the Arg.7  (Ve) (G1)
+  31- 33  I3      ---     mk8     Multiplier at the Arg.8  (Ea) (G1)
+  34- 36  I3      ---     mk9     Multiplier at the Arg.9  (Ma) (G1)
+  37- 39  I3      ---     mk10    Multiplier at the Arg.10 (Ju) (G1)
+  40- 42  I3      ---     mk11    Multiplier at the Arg.11 (Sa) (G1)
+  43- 45  I3      ---     mk12    Multiplier at the Arg.12 (Ur) (G1)
+  46- 48  I3      ---     mk13    Multiplier at the Arg.13 (Ne) (G1)
+  50- 52  I3      ---     mk14    Multiplier at the Arg.14 (pa) (G1)
+  55- 68  F14.7   km      Ak0     Amplitude of the Fourier term
+  71- 79  F9.6    m/yr    Ak1     Amplitude of the 1st-order Poisson term
+  82- 90  F9.6    mm/yr2  Ak2     Amplitude of the 2nd-order Poisson term
+  93-109  F17.12  deg     phik0   Phase of the Fourier term
+ 112-128  F17.12  deg     phik1   Phase of the 1st-order Poisson term
+ 131-147  F17.12  deg     phik2   Phase of the 2nd-order Poisson term
+--------------------------------------------------------------------------------
+
+Byte-by-byte Description of files: table[78].dat table1?.dat
+--------------------------------------------------------------------------------
+   Bytes Format   Units        Label   Explanations
+--------------------------------------------------------------------------------
+   2-  6  I5      ---      Seq     Sequental number of the term
+   9- 11  I3      ---      mk1     Multiplier at the Arg.1, l  (G1)
+  12- 14  I3      ---      mk2     Multiplier at the Arg.2, l' (G1)
+  15- 17  I3      ---      mk3     Multiplier at the Arg.3, F  (G1)
+  18- 20  I3      ---      mk4     Multiplier at the Arg.4, D  (G1)
+  21- 23  I3      ---      mk5     Multiplier at the Arg.5, {Omega} (G1)
+  25- 27  I3      ---      mk6     Multiplier at the Arg.6  (Me) (G1)
+  28- 30  I3      ---      mk7     Multiplier at the Arg.7  (Ve) (G1)
+  31- 33  I3      ---      mk8     Multiplier at the Arg.8  (Ea) (G1)
+  34- 36  I3      ---      mk9     Multiplier at the Arg.9  (Ma) (G1)
+  37- 39  I3      ---      mk10    Multiplier at the Arg.10 (Ju) (G1)
+  40- 42  I3      ---      mk11    Multiplier at the Arg.11 (Sa) (G1)
+  43- 45  I3      ---      mk12    Multiplier at the Arg.12 (Ur) (G1)
+  46- 48  I3      ---      mk13    Multiplier at the Arg.13 (Ne) (G1)
+  50- 52  I3      ---      mk14    Multiplier at the Arg.14 (pa) (G1)
+  55- 68  F14.7   arcsec   Ak0     Amplitude of the Fourier term
+  71- 79  F9.6    mas/yr   Ak1     Amplitude of the 1st-order Poisson term
+  82- 90  F9.6    uas/yr2  Ak2     Amplitude of the 2nd-order Poisson term
+  93-109  F17.12  deg      phik0   Phase of the Fourier term
+ 112-128  F17.12  deg      phik1   Phase of the 1st-order Poisson term
+ 131-147  F17.12  deg      phik2   Phase of the 2nd-order Poisson term
+--------------------------------------------------------------------------------
+
+Global Notes:
+Note (G1): the arguments are:
+   * Arg.1  is the Delaunay variable l.  Use Eq. (41) of the paper.
+   * Arg.2  is the Delaunay variable l'. Use Eq. (40) of the paper.
+   * Arg.3  is the Delaunay variable F.  Use Eq. (42) of the paper.
+   * Arg.4  is the Delaunay variable D.  Use Eq. (39) of the paper.
+   * Arg.5  is the mean longitude of the ascending node of the Moon {Omega}.
+            Use Eq. (38) in the paper.
+   * Arg.6  is the mean longitude of Mercury {lambda}_Me_.
+            Use Eq. (43) of the paper.
+   * Arg.7  is the mean longitude of Venus {lambda}_Ve_.
+            Use Eq. (44) of the paper.
+   * Arg.8  is the mean longitude of Earth {lambda}_Ea_.
+            Use Eq. (45) of the paper.
+   * Arg.9  is the mean longitude of Mars {lambda}_Ma_.
+            Use Eq. (46) of the paper.
+   * Arg.10 is the mean longitude of Jupiter {lambda}_Ju_.
+            Use Eq. (47) of the paper.
+   * Arg.11 is the mean longitude of Saturn {lambda}_Sa_.
+            Use Eq. (48) of the paper.
+   * Arg.12 is the mean longitude of Uranus {lambda}_Ur_.
+            Use Eq. (49) of the paper.
+   * Arg.13 is the mean longitude of Neptune {lambda}_Ne_.
+            Use Eq. (50) of the paper.
+   * Arg.14 is the general precession in longitude p_A_.
+            Use Eq. (51) of the paper.
+--------------------------------------------------------------------------------
+
+Acknowledgements:
+    Sergey Kudryavtsev, ksm(at)sai.msu.ru
+================================================================================
+(End)  Sergey Kudryavtsev [SAI, Russia], Patricia Vannier [CDS]    04-Jun-2007
