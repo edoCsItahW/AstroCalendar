@@ -1,9 +1,9 @@
 // Copyright (c) 2025. All rights reserved.
 // This source code is licensed under the CC BY-NC-SA
 // (Creative Commons Attribution-NonCommercial-NoDerivatives) License, By Xiao Songtao.
-// This software is protected by copyright law. Reproduction, distribution, or use for commercial
-// purposes is prohibited without the author's permission. If you have any questions or require
-// permission, please contact the author: 2207150234@st.sziit.edu.cn
+// This software is protected by copyright law. Reproduction, distribution, or use for
+// commercial purposes is prohibited without the author's permission. If you have any
+// questions or require permission, please contact the author: 2207150234@st.sziit.edu.cn
 
 /**
  * @file utils.h
@@ -25,7 +25,8 @@
 #define UTILS_H
 #pragma once
 
-#include <cassert>
+#include <array>
+#include <cstddef>
 #include <string>
 #include <type_traits>
 
@@ -158,6 +159,93 @@ constexpr auto enumMax();
 template<typename T>
     requires std::is_enum_v<T>
 constexpr auto enumToStr(T value);
+
+template<typename T, typename U = double>
+concept numerical = std::is_arithmetic_v<T> || std::is_convertible_v<T, U>;
+
+template<char... Cs>
+constexpr auto parseCharSeq();
+
+template<double V, double F, bool I, char... Cs>
+struct str_type_impl;
+
+template<double V, double F, bool I>
+struct str_type_impl<V, F, I> {
+    using type = std::conditional_t<I, double, int>;
+
+    static constexpr type value = I ? V : static_cast<int>(V);
+};
+
+template<double V, double F, bool I, char C, char... Cs>
+struct str_type_impl<V, F, I, C, Cs...> {
+private:
+    static constexpr bool is_digit = C >= '0' && C <= '9';
+    static constexpr bool is_dot   = C == '.';
+
+    static constexpr double factor  = is_digit && I ? F * 0.1 : F;
+    static constexpr double current = is_dot ? V : is_digit ? (I ? V + (C - '0') * factor : V * 10 + (C - '0')) : V;
+
+    static constexpr bool is_float = I || is_dot;
+
+    using next = str_type_impl<current, factor, is_float, Cs...>;
+
+public:
+    using type = typename next::type;
+
+    static constexpr auto value = next::value;
+};
+
+template<char... Cs>
+struct str_type : str_type_impl<0.0, 1.0, false, Cs...> {};
+
+template<char... Cs>
+using str_type_t = typename str_type<Cs...>::type;
+
+template<char... Cs>
+inline constexpr auto str_type_v = str_type<Cs...>::value;
+
+template<char... Cs>
+using char_seq_t = decltype(parseCharSeq<Cs...>());
+
+template<typename T, typename... Ts>
+struct contains_type : std::disjunction<std::is_same<T, Ts>...> {};
+
+template<typename T, typename... Ts>
+constexpr bool contains_type_v = contains_type<T, Ts...>::value;
+
+template<auto E>
+    requires std::is_enum_v<std::remove_cvref_t<decltype(E)>>
+constexpr auto enum_to_int_v = static_cast<std::underlying_type_t<decltype(E)>>(E);
+
+template<typename... Arrays>
+constexpr auto concatenate_arrays(Arrays&&... arrays) {
+    // 计算总大小
+    constexpr std::size_t total_size = (0 + ... + std::tuple_size_v<std::decay_t<Arrays>>);
+    using value_type                 = std::common_type_t<typename std::decay_t<Arrays>::value_type...>;
+    std::array<value_type, total_size> result{};
+
+    std::size_t index = 0;
+    // 使用 lambda + 折叠表达式复制数据
+    auto copy = [&](const auto& arr) {
+        for (const auto& element : arr) result[index++] = element;
+    };
+    (copy(arrays), ...);  // 依次处理每个数组
+
+    return result;
+}
+
+template<numerical T, T X, T Y>
+struct Max_impl {
+    static constexpr T value = X > Y ? X : Y;
+};
+
+template<auto X, auto Y>
+struct Max {
+    static constexpr auto value = Max_impl<decltype(X), X, Y>::value;
+};
+
+template<auto X, auto Y>
+inline constexpr auto max_v = Max<X, Y>::value;
 
 #include "utils.hpp"
 

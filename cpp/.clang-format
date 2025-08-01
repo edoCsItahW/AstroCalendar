@@ -104,7 +104,7 @@ LambdaBodyIndentation: Signature  # lambda函数体的缩进: None, Inner(缩进
 KeepEmptyLinesAtTheStartOfBlocks: false  # 保留在块开始处的空行
 MacroBlockBegin: ''  # 开始一个块的宏的正则表达式
 MacroBlockEnd: ''  # 结束一个块的宏的正则表达式
-MaxEmptyLinesToKeep: 1  # 连续空行的最大数量
+MaxEmptyLinesToKeep: 2  # 连续空行的最大数量
 NamespaceIndentation: All  # 命名空间的缩进: None, Inner(缩进嵌套的命名空间中的内容), All
 # 使用ObjC块时缩进宽度
 ObjCBlockIndentWidth: 4
@@ -161,4 +161,3 @@ SpacesInSquareBrackets: false  # 在方括号的[后和]前添加空格，lamda�
 Standard: Latest  # 标准: Cpp03, Cpp11, Auto
 TabWidth: 4  # tab宽度
 UseTab: Never  # 使用tab字符: Never, ForIndentation, ForContinuationAndIndentation, Always
-

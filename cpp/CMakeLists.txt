@@ -15,6 +15,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 add_executable(astroCalender
         main.cpp
         src/constant.cpp
+        src/date.cpp
+        src/utils.cpp
 )
 
 # target_link_libraries(MyTestExecutable PRIVATE ${Boost_LIBRARIES})

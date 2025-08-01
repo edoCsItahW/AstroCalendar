@@ -1,9 +1,9 @@
 // Copyright (c) 2025. All rights reserved.
 // This source code is licensed under the CC BY-NC-SA
 // (Creative Commons Attribution-NonCommercial-NoDerivatives) License, By Xiao Songtao.
-// This software is protected by copyright law. Reproduction, distribution, or use for commercial
-// purposes is prohibited without the author's permission. If you have any questions or require
-// permission, please contact the author: 2207150234@st.sziit.edu.cn
+// This software is protected by copyright law. Reproduction, distribution, or use for
+// commercial purposes is prohibited without the author's permission. If you have any
+// questions or require permission, please contact the author: 2207150234@st.sziit.edu.cn
 
 /**
  * @file utils.hpp
@@ -38,12 +38,15 @@ constexpr auto enumToStr() {
 
 #endif
 
-    return start == std::string_view::npos ? name : std::string_view{name.data() + start + 2, name.size() - start - 2};
+    return start == std::string_view::npos
+             ? name
+             : std::string_view{name.data() + start + 2, name.size() - start - 2};
 }
 
 template<typename T, std::size_t N>
 constexpr auto enumMax() {
-    if constexpr (constexpr auto Value = static_cast<T>(N); enumToStr<Value>().find(")") == std::string_view::npos)
+    if constexpr (constexpr auto Value = static_cast<T>(N);
+                  enumToStr<Value>().find(")") == std::string_view::npos)
         return enumMax<T, N + 1>();
 
     else
@@ -55,9 +58,37 @@ template<typename T>
 constexpr auto enumToStr(T value) {
     constexpr auto num = enumMax<T>();
 
-    constexpr auto names = []<std::size_t... I>(std::index_sequence<I...>) { return std::array<std::string_view, num>{enumToStr<static_cast<T>(I)>()...}; }(std::make_index_sequence<num>{});
+    constexpr auto names = []<std::size_t... I>(std::index_sequence<I...>) {
+        return std::array<std::string_view, num>{enumToStr<static_cast<T>(I)>()...};
+    }(std::make_index_sequence<num>{});
 
     return names[static_cast<std::size_t>(value)];
+}
+
+template<char... Vs>
+constexpr auto parseCharSeq() {
+    double value = 0;
+    double factor = 1;
+    bool afterDot = false;
+
+    ([&](const char c) {
+        if (c == '.')
+            afterDot = true;
+
+        else if (std::isdigit(c)) {
+            const int digit = c - '0';
+
+            if (afterDot) {
+                factor *= 0.1;
+                value += digit * factor;
+            }
+
+            else
+                value = value * 10 + digit;
+        }
+    }(Vs), ...);
+
+    return afterDot ? value : static_cast<int>(value);
 }
 
 #endif  // UTILS_HPP
