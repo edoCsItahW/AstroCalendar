@@ -17,10 +17,14 @@
 #define DATE_HPP
 #pragma once
 
-#include "date.h"
 #include "value.h"
 
 namespace astro {
+    // JulianDay: JulianDay constructor
+    constexpr JulianDay::JulianDay(double value, TimeScale scale)
+        : value_(value)
+        , scale_(scale) {}
+
     // JulianDay: operator+ with Value
     template<typename U, typename T>
     constexpr JulianDay JulianDay::operator+(const Val<T, U>& duration) const {
@@ -61,6 +65,34 @@ namespace astro {
         return factor.template to<Day>().value() / Val<Day, T>(value_);
     }
 
+    // convert: main function for time scale conversion
+    template<TimeScale S>
+    constexpr JulianDay convert(const JulianDay& jd) {
+        return convert(jd, S);
+    }
+
+    namespace cvt {
+        constexpr JulianDay toTT(const JulianDay& jd);
+
+        constexpr JulianDay toTDB(const JulianDay& jd);
+
+        constexpr JulianDay toTAI(const JulianDay& jd);
+
+        constexpr JulianDay toUTC(const JulianDay& jd);
+    }  // namespace cvt
+
+    constexpr JulianDay convert(const JulianDay& jd, const TimeScale target) {
+        if (jd.scale() == target) return jd;
+
+        switch (target) {
+            case TT: return cvt::toTT(jd);
+            case TDB: return cvt::toTDB(jd);
+            case TAI: return cvt::toTAI(jd);
+            case UTC: return cvt::toUTC(jd);
+            default: return jd;
+        }
+    }
+
     // DateTime: make with JulianDay
     template<TimeScale S>
     constexpr DateTime DateTime::make(const JulianDay& jd) {
@@ -75,6 +107,18 @@ namespace astro {
     template<typename U, typename T>
     constexpr auto operator/(const Val<U, T>& value, const JulianDay& jd) {
         return jd / value;
+    }
+
+    template<typename T>
+    requires numerical<T>
+    constexpr JulianDay operator*(T factor, const JulianDay& jd) {
+        return jd * factor;
+    }
+
+    template<typename T>
+    requires numerical<T>
+    constexpr JulianDay operator/(T factor, const JulianDay& jd) {
+        return jd / factor;
     }
 
 }  // namespace astro

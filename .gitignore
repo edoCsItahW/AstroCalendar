@@ -12,3 +12,6 @@ gen
 */cmake-build-msvc-debug/
 
 */.idea/
+*/__pycache__/
+
+*.zip

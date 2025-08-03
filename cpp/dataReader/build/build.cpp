@@ -28,7 +28,7 @@ Data parse(const std::string &src) {
     return Parser(tokens).parse();
 }
 
-PYBIND11_MODULE(dataReader, m) {
+PYBIND11_MODULE(vsop, m) {
     m.doc() = R"(A module for reading VSOP2013 data files, it includes a parser and a lexer for VSOP2013 data files.)";
 
     m.def("parse", &parse, R"(Parse a VSOP2013 data file and return a Data object.)");
@@ -62,31 +62,48 @@ PYBIND11_MODULE(dataReader, m) {
     py::class_<Data, AST, py::smart_holder>(m, "Data")
         .def(py::init())
         .def_readonly("nodeName", &Data::nodeName)
+#ifdef VSOP
         .def_readonly("tables", &Data::tables)
+#elifdef LEA
+        .def_readonly("terms", &Data::terms)
+#else
+    #error "must define VSOP or LEA macro"
+#endif
         .def("toJSON", &Data::toJSON, "Convert the Data object to a JSON string.");
 
+#ifdef VSOP
     py::class_<Table, AST, py::smart_holder>(m, "Table")
         .def(py::init())
         .def_readonly("nodeName", &Table::nodeName)
         .def_readonly("header", &Table::header)
         .def_readonly("terms", &Table::terms)
         .def("toJSON", &Table::toJSON, "Convert the Table object to a JSON string.");
+#endif
 
+#ifdef VSOP
     py::class_<Header, AST, py::smart_holder>(m, "Header")
         .def(py::init())
         .def_readonly("nodeName", &Header::nodeName)
         .def_readonly("fields", &Header::fields)
         .def("toJSON", &Header::toJSON, "Convert the Header object to a JSON string.");
+#endif
 
     py::class_<Term, AST, py::smart_holder>(m, "Term")
         .def(py::init())
         .def_readonly("nodeName", &Term::nodeName)
         .def_property_readonly("id", [](const Term &self) { return std::stoi(self.id->value()); })
         .def_readonly("coefficients", &Term::coefficients)
+#ifdef VSOP
         .def_readonly("sinMantissa", &Term::sinMantissa)
         .def_readonly("cosMantissa", &Term::cosMantissa)
         .def_readonly("sinExponent", &Term::sinExponent)
         .def_readonly("cosExponent", &Term::cosExponent)
+#elifdef LEA
+        .def_readonly("amplitudes", &Term::amplitudes)
+        .def_readonly("phases", &Term::phases)
+#else
+    #error "must define VSOP or LEA macro"
+#endif
         .def("toJSON", &Term::toJSON, "Convert the Term object to a JSON string.");
 
     py::class_<Expression, AST, py::smart_holder>(m, "Expression");

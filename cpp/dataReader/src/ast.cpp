@@ -20,6 +20,8 @@
 
 const char *AST::getNodeName() const { return nodeName; }
 
+#ifdef VSOP
+
 Data::Data(std::vector<std::shared_ptr<Table>> tables)
     : tables(std::move(tables)) {}
 
@@ -107,6 +109,72 @@ std::string Term::toJSON() const {
 
     return oss.str();
 }
+
+#elifdef LEA
+
+Data::Data(std::vector<std::shared_ptr<Term>> terms)
+    : terms(std::move(terms)) {}
+
+std::string Data::toJSON() const {
+    std::ostringstream oss;
+
+    oss << R"({"nodeName": ")" << nodeName << R"(","terms":[)";
+
+    for (std::size_t i{}; i < terms.size(); ++i) {
+        oss << terms[i]->toJSON();
+
+        if (i != terms.size() - 1) oss << ",";
+    }
+
+    oss << "]}";
+
+    return oss.str();
+}
+
+Term::Term(std::shared_ptr<Integer> id, std::vector<std::shared_ptr<Literal>> coefficients, std::vector<std::shared_ptr<Literal>> amplitudes, std::vector<std::shared_ptr<Literal>> phases)
+    : id(std::move(id))
+    , coefficients(std::move(coefficients))
+    , amplitudes(std::move(amplitudes))
+    , phases(std::move(phases)) {}
+
+std::string Term::toJSON() const {
+    std::ostringstream oss;
+
+    oss << R"({"nodeName": ")" << nodeName << std::format(R"(","id": {},"coefficients": [)", id->toJSON());
+
+    for (std::size_t i{}; i < coefficients.size(); ++i) {
+        oss << coefficients[i]->toJSON();
+
+        if (i != coefficients.size() - 1) oss << ",";
+    }
+
+    oss << "]," << std::format(R"("amplitudes": [)", "");
+
+    for (std::size_t i{}; i < amplitudes.size(); ++i) {
+        oss << amplitudes[i]->toJSON();
+
+        if (i != amplitudes.size() - 1) oss << ",";
+    }
+
+    oss << "]," << std::format(R"("phases": [)", "");
+
+    for (std::size_t i{}; i < phases.size(); ++i) {
+        oss << phases[i]->toJSON();
+
+        if (i != phases.size() - 1) oss << ",";
+    }
+
+    oss << "]}";
+
+    return oss.str();
+}
+
+
+#else
+
+    #error "must define VSOP or LEA macro"
+
+#endif
 
 Identifier::Identifier(std::string name)
     : name(std::move(name)) {}

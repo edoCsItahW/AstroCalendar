@@ -25,15 +25,25 @@ std::shared_ptr<Token> Parser::current() { return inScope() ? tokens[idx] : null
 
 Data Parser::parse() {
     Data data;
-
+#ifdef VSOP
     while (inScope()) {
         skip();
 
         if (auto table = parseTable()) data.tables.push_back(std::move(table));
     }
+#elifdef LEA
+    while (inScope()) {
+        skip();
 
+        if (auto term = parseTerm()) data.terms.push_back(std::move(term));
+    }
+#else
+    #error "must define VSOP or LEA macro"
+#endif
     return data;
 }
+
+#ifdef VSOP
 
 std::shared_ptr<Table> Parser::parseTable() {
     Table table;
@@ -86,6 +96,36 @@ std::shared_ptr<Term> Parser::parseTerm() {
 
     return std::make_shared<Term>(std::move(term));
 }
+
+#elifdef LEA
+
+std::shared_ptr<Term> Parser::parseTerm() {
+    Term term;
+
+    skip();
+
+    term.id = std::make_shared<Integer>(Integer{expect(TokenType::INT)->value});
+
+    for (std::size_t i{}; i < 14; ++i)
+        if (auto item = parseLiteral()) term.coefficients.push_back(std::move(item));
+
+    for (std::size_t i{}; i < 3; ++i)
+        if (auto item = parseLiteral()) term.amplitudes.push_back(std::move(item));
+
+    for (std::size_t i{}; i < 3; ++i)
+        if (auto item = parseLiteral()) term.phases.push_back(std::move(item));
+
+    if (current() && current()->type == TokenType::NEWLINE) expect(TokenType::NEWLINE);
+
+    return std::make_shared<Term>(std::move(term));
+}
+
+
+#else
+
+    #error "must define VSOP or LEA macro"
+
+#endif
 
 std::shared_ptr<Expression> Parser::parseExpression() {
     switch (current()->type) {

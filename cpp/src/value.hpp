@@ -17,7 +17,6 @@
 #define VALUE_HPP
 #pragma once
 
-#include "dimension.h"
 #include <ratio>
 
 namespace astro {  // Val: constructor

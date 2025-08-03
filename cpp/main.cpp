@@ -16,17 +16,8 @@
 
 // #include "src/type.h"
 
-#include "src/constant.h"
-#include <iostream>
 
 int main() {
-    using namespace astro;
-
-    JulianDay jd{1000.0, UTC};
-
-    auto v = convert(jd, TT);
-
-    std::cout << v.value() << std::endl;
 
     return 0;
 }

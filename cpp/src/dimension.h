@@ -172,24 +172,24 @@ namespace astro {
      * @brief 合并两个量纲列表（递归，处理第一个量纲）
      *
      * @tparam D 量纲
-     * @tparam E1 整数次幂
+     * @tparam E 整数次幂
      * @tparam Re 剩余列表
      * @tparam L 量纲列表
      * @tparam Rs 结果列表
      */
-    template<typename D, int E1, typename... Re, typename L, typename... Rs>
-    struct merge_dimensions_impl<DimensionList<Dimension<D, E1>, Re...>, L, DimensionList<Rs...>> {
+    template<typename D, int E, typename... Re, typename L, typename... Rs>
+    struct merge_dimensions_impl<DimensionList<Dimension<D, E>, Re...>, L, DimensionList<Rs...>> {
         struct find_same_dimension {
             template<typename, typename = void>
             struct impl {
                 static constexpr bool found = false;
-                using type                  = Dimension<D, E1>;
+                using type                  = Dimension<D, E>;
             };
 
             template<typename O, int E2, typename... Ps>
             struct impl<DimensionList<Dimension<O, E2>, Ps...>, std::enable_if_t<std::is_same_v<D, O>>> {
                 static constexpr bool found            = true;
-                static constexpr int combined_exponent = E1 + E2;
+                static constexpr int combined_exponent = E + E2;
                 using type                             = std::conditional_t<combined_exponent != 0, Dimension<D, combined_exponent>, void>;
             };
 

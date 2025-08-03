@@ -20,4 +20,12 @@ add_executable(dataReader
         ../src/ast.cpp
 )
 
+option(USE_LEA "Use LEA implementation" OFF)
+option(USE_VSOP "Use VSOP implementation" ON)
+if (USE_LEA)
+    target_compile_definitions(dataReader PRIVATE LEA)
+elseif (USE_VSOP)
+    target_compile_definitions(dataReader PRIVATE VSOP)
+endif()
+
 # target_link_libraries(MyTestExecutable PRIVATE ${Boost_LIBRARIES})

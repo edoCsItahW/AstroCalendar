@@ -14,8 +14,8 @@
 # desc:
 # -------------------------<edocsitahw>----------------------------
 
-from csv import reader, writer
-from dataReader import *
+from vsopDataReader import *
+from typing import Literal as LiteralType
 
 
 def literalValue(literal: Literal) -> float | int | str:
@@ -35,7 +35,7 @@ def expressionValue(expr: Expression) -> str | float | int:
     raise TypeError("Invalid expression type")
 
 
-def readData(filePath: str, csvDirPath: str, delimiter: str = ","):
+def readData(filePath: str) -> None:
     with open(filePath, "r") as f:
         tokens = Lexer.tokenize(f.read())
 
@@ -59,4 +59,4 @@ def readData(filePath: str, csvDirPath: str, delimiter: str = ","):
 
 
 if __name__ == '__main__':
-    readData(r"..\data\VSOP2013.dat", r"..\data")
+    readData(r"..\..\data\VSOP2013\VSOP2013p3.dat")

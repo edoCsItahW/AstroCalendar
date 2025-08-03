@@ -23,11 +23,6 @@ namespace astro {
 
     extern const JulianDay J2000;
 
-    template<TimeScale S>
-    constexpr JulianDay convert(const JulianDay& jd);
-
-    constexpr JulianDay convert(const JulianDay& jd, TimeScale target);
-
     namespace vsop2013 {
         /**
          * @if zh

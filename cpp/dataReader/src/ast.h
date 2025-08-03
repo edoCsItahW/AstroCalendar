@@ -85,6 +85,8 @@ struct Float final : Literal {
     [[nodiscard]] std::string value() const override;
 };
 
+#ifdef VSOP
+
 struct Header final : AST {
     const char *nodeName = "Header";
 
@@ -146,5 +148,42 @@ struct Data final : AST {
 
     [[nodiscard]] std::string toJSON() const override;
 };
+
+#elifdef LEA
+
+struct Term final : AST {
+    const char *nodeName = "Term";
+
+    std::shared_ptr<Integer> id;
+
+    std::vector<std::shared_ptr<Literal>> coefficients;
+
+    std::vector<std::shared_ptr<Literal>> amplitudes;
+
+    std::vector<std::shared_ptr<Literal>> phases;
+
+    Term() = default;
+
+    Term(std::shared_ptr<Integer> id, std::vector<std::shared_ptr<Literal>> coefficients, std::vector<std::shared_ptr<Literal>> amplitudes, std::vector<std::shared_ptr<Literal>> phases);
+
+    [[nodiscard]] std::string toJSON() const override;
+};
+
+struct Data final : AST {
+    const char *nodeName = "Data";
+
+    std::vector<std::shared_ptr<Term>> terms;
+
+    Data() = default;
+
+    Data(std::vector<std::shared_ptr<Term>> terms);
+
+    [[nodiscard]] std::string toJSON() const override;
+};
+#else
+
+    #error "must define VSOP or LEA macro"
+
+#endif
 
 #endif  // AST_H

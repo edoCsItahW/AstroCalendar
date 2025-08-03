@@ -99,6 +99,11 @@ namespace astro {
     template<typename T>
     inline constexpr bool is_julian_day_v = std::is_same_v<T, JulianDay>;
 
+    template<TimeScale S>
+    constexpr JulianDay convert(const JulianDay& jd);
+
+    constexpr JulianDay convert(const JulianDay& jd, TimeScale target);
+
     struct DateTime {
         int year      = 0;
         int month     = 0;
@@ -122,6 +127,15 @@ namespace astro {
 
     template<typename U, typename T>
     constexpr auto operator/(const Val<U, T>& value, const JulianDay& jd);
+
+    template<typename T>
+    requires numerical<T>
+    constexpr JulianDay operator*(T factor, const JulianDay& jd);
+
+    template<typename T>
+    requires numerical<T>
+    constexpr JulianDay operator/(T factor, const JulianDay& jd);
+
 
 }  // namespace astro
 

@@ -39,9 +39,13 @@ private:
 
     std::shared_ptr<Token> advance();
 
+#ifdef VSOP
+
     std::shared_ptr<Table> parseTable();
 
     std::shared_ptr<Header> parseHeader();
+
+#endif
 
     std::shared_ptr<Term> parseTerm();
 

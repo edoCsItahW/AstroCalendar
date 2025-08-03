@@ -18,11 +18,7 @@
 #pragma once
 
 namespace astro {
-    // convert: main function for time scale conversion
-    template<TimeScale S>
-    constexpr JulianDay convert(const JulianDay& jd) {
-        return convert(jd, S);
-    }
+
 }  // namespace astro
 
 #endif  // CONSTANT_HPP
