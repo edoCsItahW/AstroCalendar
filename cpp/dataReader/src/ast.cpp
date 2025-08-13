@@ -18,185 +18,167 @@
 #include <sstream>
 #include <utility>
 
-const char *AST::getNodeName() const { return nodeName; }
+namespace astro::reader {
+    Type type = LEA;
 
-#ifdef VSOP
+    const char *AST::getNodeName() const { return nodeName; }
 
-Data::Data(std::vector<std::shared_ptr<Table>> tables)
-    : tables(std::move(tables)) {}
+    // -------------------- Data --------------------
 
-std::string Data::toJSON() const {
-    std::ostringstream oss;
+    Data::Data(std::vector<std::shared_ptr<Table>> tables)
+        : tables(std::move(tables)) {}
 
-    oss << R"({"nodeName": ")" << nodeName << R"(","tables":[)";
+    Data::Data(std::vector<std::shared_ptr<Term>> terms)
+        : terms(std::move(terms)) {}
 
-    for (std::size_t i{}; i < tables.size(); ++i) {
-        oss << tables[i]->toJSON();
+    std::string Data::toJSON() const {
+        std::ostringstream oss;
 
-        if (i != tables.size() - 1) oss << ",";
+        oss << R"({"nodeName": ")" << nodeName << "\",";
+
+        if (type == VSOP)
+            vectorJSONToSteam("tables", tables, oss);
+
+        else
+            vectorJSONToSteam("terms", terms, oss);
+
+        oss << "}";
+
+        return oss.str();
     }
 
-    oss << "]}";
+    // -------------------- Table --------------------
 
-    return oss.str();
-}
+    Table::Table(std::shared_ptr<Header> header, std::vector<std::shared_ptr<Term>> terms)
+        : header(std::move(header))
+        , terms(std::move(terms)) {}
 
-Table::Table(std::shared_ptr<Header> header, std::vector<std::shared_ptr<Term>> terms)
-    : header(std::move(header))
-    , terms(std::move(terms)) {}
+    std::string Table::toJSON() const {
+        std::ostringstream oss;
 
-std::string Table::toJSON() const {
-    std::ostringstream oss;
+        oss << R"({"nodeName": ")" << nodeName << std::format(R"(","header": {},)", header->toJSON());
 
-    oss << R"({"nodeName": ")" << nodeName << std::format(R"(","header": {},"terms": [)", header->toJSON());
+        vectorJSONToSteam("terms", terms, oss);
 
-    for (std::size_t i{}; i < terms.size(); ++i) {
-        oss << terms[i]->toJSON();
+        oss << "}";
 
-        if (i != terms.size() - 1) oss << ",";
+        return oss.str();
     }
 
-    oss << "]}";
+    // -------------------- Header --------------------
 
-    return oss.str();
-}
+    Header::Header(std::vector<std::shared_ptr<Expression>> fields)
+        : fields(std::move(fields)) {}
 
-Header::Header(std::vector<std::shared_ptr<Expression>> fields)
-    : fields(std::move(fields)) {}
+    std::string Header::toJSON() const {
+        std::ostringstream oss;
 
-std::string Header::toJSON() const {
-    std::ostringstream oss;
+        oss << R"({"nodeName": ")" << nodeName << "\",";
 
-    oss << R"({"nodeName": ")" << nodeName << R"(","fields": [)";
+        vectorJSONToSteam("fields", fields, oss);
 
-    for (std::size_t i{}; i < fields.size(); ++i) {
-        oss << fields[i]->toJSON();
+        oss << "}";
 
-        if (i != fields.size() - 1) oss << ",";
+        return oss.str();
     }
 
-    oss << "]}";
+    // -------------------- Term --------------------
 
-    return oss.str();
-}
+    Term::Term(
+        const std::shared_ptr<Integer> &id, const std::vector<std::shared_ptr<Literal>> &coefficients, const std::shared_ptr<Literal> &sinMantissa, const std::shared_ptr<Literal> &cosMantissa,
+        const std::shared_ptr<Literal> &sinExponent, const std::shared_ptr<Literal> &cosExponent
+    )
+        : id(id)
+        , coefficients(coefficients)
+        , sinMantissa(sinMantissa)
+        , cosMantissa(cosMantissa)
+        , sinExponent(sinExponent)
+        , cosExponent(cosExponent) {}
 
-Term::Term(
-    const std::shared_ptr<Integer> &id, const std::vector<std::shared_ptr<Literal>> &coefficients, const std::shared_ptr<Literal> &sinMantissa, const std::shared_ptr<Literal> &cosMantissa,
-    const std::shared_ptr<Literal> &sinExponent, const std::shared_ptr<Literal> &cosExponent
-)
-    : id(id)
-    , coefficients(coefficients)
-    , sinMantissa(sinMantissa)
-    , cosMantissa(cosMantissa)
-    , sinExponent(sinExponent)
-    , cosExponent(cosExponent) {}
+    Term::Term(
+        const std::shared_ptr<Integer> &id, const std::vector<std::shared_ptr<Literal>> &coefficients, const std::vector<std::shared_ptr<Literal>> &amplitudes,
+        const std::vector<std::shared_ptr<Literal>> &phases
+    )
+        : id(id)
+        , coefficients(coefficients)
+        , amplitudes(amplitudes)
+        , phases(phases) {}
 
-std::string Term::toJSON() const {
-    std::ostringstream oss;
+    std::string Term::toJSON() const {
+        std::ostringstream oss;
 
-    oss << R"({"nodeName": ")" << nodeName << std::format(R"(","id": {},"coefficients": [)", id->toJSON());
+        oss << R"({"nodeName": ")" << nodeName << std::format(R"(","id": {},"coefficients": [)", id->toJSON());
 
-    for (std::size_t i{}; i < coefficients.size(); ++i) {
-        oss << coefficients[i]->toJSON();
+        for (std::size_t i{}; i < coefficients.size(); ++i) {
+            oss << coefficients[i]->toJSON();
 
-        if (i != coefficients.size() - 1) oss << ",";
+            if (i != coefficients.size() - 1) oss << ",";
+        }
+
+        oss << "],";
+
+        if (type == VSOP)
+            oss << std::format(
+                R"("sinMantissa": {},"cosMantissa": {},"sinExponent": {},"cosExponent": {})", sinMantissa->toJSON(), cosMantissa->toJSON(), sinExponent->toJSON(), cosExponent->toJSON()
+            );
+
+        else {
+            vectorJSONToSteam("amplitudes", amplitudes, oss);
+
+            oss << ",";
+
+            vectorJSONToSteam("phases", phases, oss);
+        }
+
+        oss << "}";
+
+        return oss.str();
     }
 
-    oss << "],"
-        << std::format(R"("sinMantissa": {},"cosMantissa": {},"sinExponent": {},"cosExponent": {})", sinMantissa->toJSON(), cosMantissa->toJSON(), sinExponent->toJSON(), cosExponent->toJSON());
+    // -------------------- Identifier --------------------
 
-    oss << "}";
+    Identifier::Identifier(std::string name)
+        : name(std::move(name)) {}
 
-    return oss.str();
-}
+    std::string Identifier::toJSON() const { return std::format(R"({{"nodeName": "{}","name": "{}"}})", nodeName, name); }
 
-#elifdef LEA
+    // -------------------- Variable --------------------
 
-Data::Data(std::vector<std::shared_ptr<Term>> terms)
-    : terms(std::move(terms)) {}
+    Variable::Variable(std::string name, std::string flag)
+        : name(std::move(name))
+        , flag(std::move(flag)) {}
 
-std::string Data::toJSON() const {
-    std::ostringstream oss;
+    std::string Variable::toJSON() const { return std::format(R"({{"nodeName": "{}","name": "{}","flag": "{}"}})", nodeName, name, flag); }
 
-    oss << R"({"nodeName": ")" << nodeName << R"(","terms":[)";
+    // -------------------- Integer --------------------
 
-    for (std::size_t i{}; i < terms.size(); ++i) {
-        oss << terms[i]->toJSON();
+    Integer::Integer(std::string value)
+        : value_(std::move(value)) {}
 
-        if (i != terms.size() - 1) oss << ",";
+    LiteralValue Integer::value() const {
+        if (!hasCache_) {
+            cache_    = std::stoi(value_);
+            hasCache_ = true;
+        }
+
+        return cache_;
     }
 
-    oss << "]}";
+    std::string Integer::toJSON() const { return std::format(R"({{"nodeName": "{}","value": "{}"}})", nodeName, value_); }
 
-    return oss.str();
-}
+    // -------------------- Float --------------------
 
-Term::Term(std::shared_ptr<Integer> id, std::vector<std::shared_ptr<Literal>> coefficients, std::vector<std::shared_ptr<Literal>> amplitudes, std::vector<std::shared_ptr<Literal>> phases)
-    : id(std::move(id))
-    , coefficients(std::move(coefficients))
-    , amplitudes(std::move(amplitudes))
-    , phases(std::move(phases)) {}
+    Float::Float(std::string value)
+        : value_(std::move(value)) {}
 
-std::string Term::toJSON() const {
-    std::ostringstream oss;
+    LiteralValue Float::value() const {
+        if (!hasCache_) {
+            cache_    = std::stod(value_);
+            hasCache_ = true;
+        }
 
-    oss << R"({"nodeName": ")" << nodeName << std::format(R"(","id": {},"coefficients": [)", id->toJSON());
-
-    for (std::size_t i{}; i < coefficients.size(); ++i) {
-        oss << coefficients[i]->toJSON();
-
-        if (i != coefficients.size() - 1) oss << ",";
+        return cache_;
     }
 
-    oss << "]," << std::format(R"("amplitudes": [)", "");
-
-    for (std::size_t i{}; i < amplitudes.size(); ++i) {
-        oss << amplitudes[i]->toJSON();
-
-        if (i != amplitudes.size() - 1) oss << ",";
-    }
-
-    oss << "]," << std::format(R"("phases": [)", "");
-
-    for (std::size_t i{}; i < phases.size(); ++i) {
-        oss << phases[i]->toJSON();
-
-        if (i != phases.size() - 1) oss << ",";
-    }
-
-    oss << "]}";
-
-    return oss.str();
-}
-
-
-#else
-
-    #error "must define VSOP or LEA macro"
-
-#endif
-
-Identifier::Identifier(std::string name)
-    : name(std::move(name)) {}
-
-std::string Identifier::toJSON() const { return std::format(R"({{"nodeName": "{}","name": "{}"}})", nodeName, name); }
-
-Variable::Variable(std::string name, std::string flag)
-    : name(std::move(name))
-    , flag(std::move(flag)) {}
-
-std::string Variable::toJSON() const { return std::format(R"({{"nodeName": "{}","name": "{}","flag": "{}"}})", nodeName, name, flag); }
-
-Integer::Integer(std::string value)
-    : value_(std::move(value)) {}
-
-std::string Integer::value() const { return value_; }
-
-std::string Integer::toJSON() const { return std::format(R"({{"nodeName": "{}","value": "{}"}})", nodeName, value_); }
-
-Float::Float(std::string value)
-    : value_(std::move(value)) {}
-
-std::string Float::value() const { return value_; }
-
-std::string Float::toJSON() const { return std::format(R"({{"nodeName": "{}","value": "{}"}})", nodeName, value_); }
+    std::string Float::toJSON() const { return std::format(R"({{"nodeName": "{}","value": "{}"}})", nodeName, value_); }
+}  // namespace astro::reader

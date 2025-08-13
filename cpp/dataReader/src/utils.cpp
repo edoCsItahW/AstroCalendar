@@ -19,32 +19,34 @@
 #include <cassert>
 #include <string_view>
 
-bool isDigit(const char c) { return c >= '0' && c <= '9'; }
+namespace astro::reader {
+    bool isDigit(const char c) { return c >= '0' && c <= '9'; }
 
-bool isLetter(const char c) { return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'; }
+    bool isLetter(const char c) { return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'; }
 
-bool isHexDigit(const char c) { return isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
+    bool isHexDigit(const char c) { return isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
 
-bool isWhitespace(const char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
+    bool isWhitespace(const char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
 
-bool isIdentifier(const char c) { return isLetter(c) || isDigit(c) || c == '_'; }
+    bool isIdentifier(const char c) { return isLetter(c) || isDigit(c) || c == '_'; }
 
-std::string toLowerCase(const std::string& str) {
-    std::string result = str;
-    std::ranges::transform(result, result.begin(), tolower);
-    return result;
-}
+    std::string toLowerCase(const std::string& str) {
+        std::string result = str;
+        std::ranges::transform(result, result.begin(), tolower);
+        return result;
+    }
 
-bool isUpperCase(const std::string& str) {
-    return std::ranges::all_of(str, [](const char c) { return isLetter(c) && std::toupper(c) == c; });
-}
+    bool isUpperCase(const std::string& str) {
+        return std::ranges::all_of(str, [](const char c) { return isLetter(c) && std::toupper(c) == c; });
+    }
 
-bool isLowerCase(const std::string& str) {
-    return std::ranges::all_of(str, [](const char c) { return isLetter(c) && std::tolower(c) == c; });
-}
+    bool isLowerCase(const std::string& str) {
+        return std::ranges::all_of(str, [](const char c) { return isLetter(c) && std::tolower(c) == c; });
+    }
 
-bool isCapitalized(const std::string& str) {
-    if (str.empty()) return false;
+    bool isCapitalized(const std::string& str) {
+        if (str.empty()) return false;
 
-    return isUpperCase(&str[0]) && std::ranges::all_of(str.substr(1), [](const char c) { return isLowerCase(&c); });
-}
+        return isUpperCase(&str[0]) && std::ranges::all_of(str.substr(1), [](const char c) { return isLowerCase(&c); });
+    }
+}  // namespace astro::reader

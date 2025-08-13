@@ -18,50 +18,48 @@
 #pragma once
 #include "ast.h"
 #include "lexer.h"
-#include <cstddef>
 
-class Parser {
-public:
-    Parser(const std::vector<std::shared_ptr<Token>>& tokens);
+namespace astro::reader {
+    class Parser {
+    public:
+        Parser(const std::vector<std::shared_ptr<Token>>& tokens);
 
-    Parser(const Parser&) = default;
+        Parser(const Parser&) = default;
 
-    Parser(Parser&&) noexcept = default;
+        Parser(Parser&&) noexcept = default;
 
-    Data parse();
+        Data parse();
 
-private:
-    std::vector<std::shared_ptr<Token>> tokens;
+    private:
+        std::vector<std::shared_ptr<Token>> tokens;
 
-    mutable std::size_t idx{};
+        mutable std::size_t idx{};
 
-    std::shared_ptr<Token> current();
+        std::shared_ptr<Token> current();
 
-    std::shared_ptr<Token> advance();
+        std::shared_ptr<Token> advance();
 
-#ifdef VSOP
+        std::shared_ptr<Table> parseTable();
 
-    std::shared_ptr<Table> parseTable();
+        std::shared_ptr<Header> parseHeader();
 
-    std::shared_ptr<Header> parseHeader();
+        std::shared_ptr<Term> parseTerm();
 
-#endif
+        std::shared_ptr<Expression> parseExpression();
 
-    std::shared_ptr<Term> parseTerm();
+        std::shared_ptr<Identifier> parseIdentifier();
 
-    std::shared_ptr<Expression> parseExpression();
+        std::shared_ptr<Variable> parseVariable();
 
-    std::shared_ptr<Identifier> parseIdentifier();
+        std::shared_ptr<Literal> parseLiteral();
 
-    std::shared_ptr<Variable> parseVariable();
+        std::shared_ptr<Token> expect(TokenType type);
 
-    std::shared_ptr<Literal> parseLiteral();
+        bool inScope() const noexcept;
 
-    std::shared_ptr<Token> expect(TokenType type);
+        void skip() noexcept;
+    };
+}  // namespace astro::reader
 
-    bool inScope() const noexcept;
-
-    void skip() noexcept;
-};
 
 #endif  // PARSER_H

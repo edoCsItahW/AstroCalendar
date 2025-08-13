@@ -20,44 +20,46 @@
 #include <array>
 #include <string_view>
 
-template<auto V>
-constexpr auto enumToStr() {
-    std::string_view name;
+namespace astro::reader {
+    template<auto V>
+    constexpr auto enumToStr() {
+        std::string_view name;
 
 #if __GNUC__ || __clang__
-    name              = __PRETTY_FUNCTION__;
-    std::size_t start = name.find_first_of('=') + 2;
-    name              = std::string_view(name.data() + start, name.size() - start - 1);
-    start             = name.rfind("::");
+        name              = __PRETTY_FUNCTION__;
+        std::size_t start = name.find_first_of('=') + 2;
+        name              = std::string_view(name.data() + start, name.size() - start - 1);
+        start             = name.rfind("::");
 
 #elif _MSC_VER
-    name              = __FUNCSIG__;
-    std::size_t start = name.find_first_of('<') + 1;
-    name              = std::string_view(name.data() + start, name.rfind('>') - start);
-    start             = name.rfind("::");
+        name              = __FUNCSIG__;
+        std::size_t start = name.find_first_of('<') + 1;
+        name              = std::string_view(name.data() + start, name.rfind('>') - start);
+        start             = name.rfind("::");
 
 #endif
 
-    return start == std::string_view::npos ? name : std::string_view{name.data() + start + 2, name.size() - start - 2};
-}
+        return start == std::string_view::npos ? name : std::string_view{name.data() + start + 2, name.size() - start - 2};
+    }
 
-template<typename T, std::size_t N>
-constexpr auto enumMax() {
-    if constexpr (constexpr auto Value = static_cast<T>(N); enumToStr<Value>().find(")") == std::string_view::npos)
-        return enumMax<T, N + 1>();
+    template<typename T, std::size_t N>
+    constexpr auto enumMax() {
+        if constexpr (constexpr auto Value = static_cast<T>(N); enumToStr<Value>().find(")") == std::string_view::npos)
+            return enumMax<T, N + 1>();
 
-    else
-        return N;
-}
+        else
+            return N;
+    }
 
-template<typename T>
-    requires std::is_enum_v<T>
-constexpr auto enumToStr(T value) {
-    constexpr auto num = enumMax<T>();
+    template<typename T>
+        requires std::is_enum_v<T>
+    constexpr auto enumToStr(T value) {
+        constexpr auto num = enumMax<T>();
 
-    constexpr auto names = []<std::size_t... I>(std::index_sequence<I...>) { return std::array<std::string_view, num>{enumToStr<static_cast<T>(I)>()...}; }(std::make_index_sequence<num>{});
+        constexpr auto names = []<std::size_t... I>(std::index_sequence<I...>) { return std::array<std::string_view, num>{enumToStr<static_cast<T>(I)>()...}; }(std::make_index_sequence<num>{});
 
-    return names[static_cast<std::size_t>(value)];
-}
+        return names[static_cast<std::size_t>(value)];
+    }
+}  // namespace astro::reader
 
 #endif  // UTILS_HPP

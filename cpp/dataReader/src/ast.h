@@ -17,173 +17,208 @@
 #define AST_H
 #pragma once
 
+#include <iostream>
 #include <memory>
 #include <string>
+#include <variant>
 #include <vector>
 
-struct AST {
-    const char *nodeName;
+namespace astro::reader {
+    enum Type { VSOP, LEA };
 
-    virtual ~AST() = default;
+    extern Type type;
 
-    [[nodiscard]] virtual const char *getNodeName() const;
+    using LiteralValue = std::variant<std::string, int, double>;
 
-    [[nodiscard]] virtual std::string toJSON() const = 0;
-};
+    struct AST {
+        const char *nodeName;
 
-struct Expression : AST {};
+        virtual ~AST() = default;
 
-struct Identifier final : Expression {
-    const char *nodeName = "Identifier";
+        [[nodiscard]] virtual const char *getNodeName() const;
 
-    Identifier(std::string name);
+        [[nodiscard]] virtual std::string toJSON() const = 0;
+    };
 
-    std::string name;
+    template<typename T>
+        requires std::is_base_of_v<AST, T>
+    void vectorJSONToSteam(const char *fieldName, const std::vector<std::shared_ptr<T>> &vec, std::ostream &oss) {
+        oss << "\"" << fieldName << "\": [";
 
-    [[nodiscard]] std::string toJSON() const override;
-};
+        for (std::size_t i{}; i < vec.size(); ++i) {
+            oss << vec[i]->toJSON();
 
-struct Variable final : Expression {
-    const char *nodeName = "Variable";
+            if (i != vec.size() - 1) oss << ",";
+        }
+    }
 
-    std::string name;
+    struct Expression : AST {};
 
-    std::string flag;
+    struct Identifier final : Expression {
+        const char *nodeName = "Identifier";
 
-    Variable() = default;
+        Identifier(std::string name);
 
-    Variable(std::string name, std::string flag);
+        Identifier(const Identifier &other) = default;
 
-    [[nodiscard]] std::string toJSON() const override;
-};
+        std::string name;
 
-struct Literal : Expression {
-    [[nodiscard]] virtual std::string value() const = 0;
-};
+        [[nodiscard]] std::string toJSON() const override;
+    };
 
-struct Integer final : Literal {
-    const char *nodeName = "Integer";
+    struct Variable final : Expression {
+        const char *nodeName = "Variable";
 
-    Integer(std::string value);
+        std::string name;
 
-    std::string value_;
+        std::string flag;
 
-    [[nodiscard]] std::string toJSON() const override;
+        Variable() = default;
 
-    [[nodiscard]] std::string value() const override;
-};
+        Variable(std::string name, std::string flag);
 
-struct Float final : Literal {
-    const char *nodeName = "Float";
+        Variable(const Variable &other) = default;
 
-    Float(std::string value);
+        [[nodiscard]] std::string toJSON() const override;
+    };
 
-    std::string value_;
+    struct Literal : Expression {
+        [[nodiscard]] virtual LiteralValue value() const = 0;
+    };
 
-    [[nodiscard]] std::string toJSON() const override;
+    struct Integer final : Literal {
+        const char *nodeName = "Integer";
 
-    [[nodiscard]] std::string value() const override;
-};
+        Integer(std::string value);
 
-#ifdef VSOP
+        Integer(const Integer &other) = default;
 
-struct Header final : AST {
-    const char *nodeName = "Header";
+        std::string value_;
 
-    std::vector<std::shared_ptr<Expression>> fields;
+        mutable bool hasCache_ = false;
 
-    Header() = default;
+        mutable int cache_ = 0;
 
-    Header(std::vector<std::shared_ptr<Expression>> fields);
+        [[nodiscard]] std::string toJSON() const override;
 
-    [[nodiscard]] std::string toJSON() const override;
-};
+        [[nodiscard]] LiteralValue value() const override;
+    };
 
-struct Term final : AST {
-    const char *nodeName = "Term";
-    std::shared_ptr<Integer> id;
+    struct Float final : Literal {
+        const char *nodeName = "Float";
 
-    std::vector<std::shared_ptr<Literal>> coefficients;
+        Float(std::string value);
 
-    std::shared_ptr<Literal> sinMantissa;
+        Float(const Float &other) = default;
 
-    std::shared_ptr<Literal> cosMantissa;
+        std::string value_;
 
-    std::shared_ptr<Literal> sinExponent;
+        mutable bool hasCache_ = false;
 
-    std::shared_ptr<Literal> cosExponent;
+        mutable double cache_ = 0.0;
 
-    Term() = default;
+        [[nodiscard]] std::string toJSON() const override;
 
-    Term(
-        const std::shared_ptr<Integer> &id, const std::vector<std::shared_ptr<Literal>> &coefficients, const std::shared_ptr<Literal> &sinMantissa, const std::shared_ptr<Literal> &cosMantissa,
-        const std::shared_ptr<Literal> &sinExponent, const std::shared_ptr<Literal> &cosExponent
-    );
+        [[nodiscard]] LiteralValue value() const override;
+    };
 
-    [[nodiscard]] std::string toJSON() const override;
-};
+    struct Header final : AST {
+        const char *nodeName = "Header";
 
-struct Table final : AST {
-    const char *nodeName = "Table";
+        std::vector<std::shared_ptr<Expression>> fields;
 
-    std::shared_ptr<Header> header;
+        Header() = default;
 
-    std::vector<std::shared_ptr<Term>> terms;
+        Header(std::vector<std::shared_ptr<Expression>> fields);
 
-    Table() = default;
+        Header(const Header &other) = default;
 
-    Table(std::shared_ptr<Header> header, std::vector<std::shared_ptr<Term>> terms);
+        [[nodiscard]] std::string toJSON() const override;
+    };
 
-    [[nodiscard]] std::string toJSON() const override;
-};
+    struct Term final : AST {
+        const char *nodeName = "Term";
+        std::shared_ptr<Integer> id;
 
-struct Data final : AST {
-    const char *nodeName = "Data";
+        std::vector<std::shared_ptr<Literal>> coefficients;
 
-    std::vector<std::shared_ptr<Table>> tables;
+        // 当TYPE为VSOP时
+        std::shared_ptr<Literal> sinMantissa;
 
-    Data() = default;
+        // 当TYPE为VSOP时
+        std::shared_ptr<Literal> cosMantissa;
 
-    Data(std::vector<std::shared_ptr<Table>> tables);
+        // 当TYPE为VSOP时
+        std::shared_ptr<Literal> sinExponent;
 
-    [[nodiscard]] std::string toJSON() const override;
-};
+        // 当TYPE为VSOP时
+        std::shared_ptr<Literal> cosExponent;
 
-#elifdef LEA
+        // 当TYPE为LEA时
+        std::vector<std::shared_ptr<Literal>> amplitudes;
 
-struct Term final : AST {
-    const char *nodeName = "Term";
+        // 当TYPE为LEA时
+        std::vector<std::shared_ptr<Literal>> phases;
 
-    std::shared_ptr<Integer> id;
+        Term() = default;
 
-    std::vector<std::shared_ptr<Literal>> coefficients;
+        // 重载: 当TYPE为VSOP时
+        Term(
+            const std::shared_ptr<Integer> &id, const std::vector<std::shared_ptr<Literal>> &coefficients, const std::shared_ptr<Literal> &sinMantissa, const std::shared_ptr<Literal> &cosMantissa,
+            const std::shared_ptr<Literal> &sinExponent, const std::shared_ptr<Literal> &cosExponent
+        );
 
-    std::vector<std::shared_ptr<Literal>> amplitudes;
+        // 重载: 当TYPE为LEA时
+        Term(
+            const std::shared_ptr<Integer> &id, const std::vector<std::shared_ptr<Literal>> &coefficients, const std::vector<std::shared_ptr<Literal>> &amplitudes,
+            const std::vector<std::shared_ptr<Literal>> &phases
+        );
 
-    std::vector<std::shared_ptr<Literal>> phases;
+        Term(const Term &other) = default;
 
-    Term() = default;
+        [[nodiscard]] std::string toJSON() const override;
+    };
 
-    Term(std::shared_ptr<Integer> id, std::vector<std::shared_ptr<Literal>> coefficients, std::vector<std::shared_ptr<Literal>> amplitudes, std::vector<std::shared_ptr<Literal>> phases);
+    struct Table final : AST {
+        const char *nodeName = "Table";
 
-    [[nodiscard]] std::string toJSON() const override;
-};
+        std::shared_ptr<Header> header;
 
-struct Data final : AST {
-    const char *nodeName = "Data";
+        std::vector<std::shared_ptr<Term>> terms;
 
-    std::vector<std::shared_ptr<Term>> terms;
+        Table() = default;
 
-    Data() = default;
+        Table(std::shared_ptr<Header> header, std::vector<std::shared_ptr<Term>> terms);
 
-    Data(std::vector<std::shared_ptr<Term>> terms);
+        Table(const Table &other) = default;
 
-    [[nodiscard]] std::string toJSON() const override;
-};
-#else
+        [[nodiscard]] std::string toJSON() const override;
+    };
 
-    #error "must define VSOP or LEA macro"
+    struct Data final : AST {
+        const char *nodeName = "Data";
 
-#endif
+        Type type_;
+
+        // 当TYPE为VSOP时
+        std::vector<std::shared_ptr<Table>> tables;
+
+        // 当TYPE为LEA时
+        std::vector<std::shared_ptr<Term>> terms;
+
+        Data() = default;
+
+        // 重载: 当TYPE为VSOP时
+        Data(std::vector<std::shared_ptr<Table>> tables);
+
+        // 重载: 当TYPE为LEA时
+        Data(std::vector<std::shared_ptr<Term>> terms);
+
+        Data(const Data &other) = default;
+
+        [[nodiscard]] std::string toJSON() const override;
+    };
+}  // namespace astro::reader
+
 
 #endif  // AST_H

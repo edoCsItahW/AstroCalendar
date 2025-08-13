@@ -13,14 +13,16 @@
 # data: 2025/8/3 19:35
 # desc:
 # -------------------------<edocsitahw>----------------------------
-from leaDataReader import *
+from dataReader import *
 
-def literalValue(literal: Literal) -> float | int | str:
-    return literal.value
 
 def readData(filePath: str) -> None:
     with open(filePath, "r") as f:
         tokens = Lexer.tokenize(f.read())
+
+        for i, token in enumerate(tokens):
+            if 350 <= i <= 375:
+                print(i, ": ", token)
 
         print("词法分析完毕")
 
@@ -29,13 +31,8 @@ def readData(filePath: str) -> None:
         print("语法分析完毕")
 
         for term in data.terms:
-            print([
-                term.id,
-                [literalValue(literal) for literal in term.coefficients],
-                [literalValue(literal) for literal in term.amplitudes],
-                [literalValue(literal) for literal in term.phases]
-            ])
+            print([term.id, term.coefficients, term.amplitudes, term.phases])
 
 
 if __name__ == '__main__':
-    readData(r"..\..\data\LEA-406\table6.dat")
+    readData(r"E:\code\astroCalendar\data\LEA-406\table9.dat")

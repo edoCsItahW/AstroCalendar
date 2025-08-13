@@ -13,5 +13,5 @@
 # data: 2025/8/3 15:38
 # desc:
 # -------------------------<edocsitahw>----------------------------
-from constant import *
-from value import *
+from .constant import *
+from .value import *

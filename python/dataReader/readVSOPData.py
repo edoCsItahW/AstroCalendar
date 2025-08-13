@@ -14,12 +14,7 @@
 # desc:
 # -------------------------<edocsitahw>----------------------------
 
-from vsopDataReader import *
-from typing import Literal as LiteralType
-
-
-def literalValue(literal: Literal) -> float | int | str:
-    return literal.value
+from dataReader import *
 
 
 def expressionValue(expr: Expression) -> str | float | int:
@@ -30,7 +25,7 @@ def expressionValue(expr: Expression) -> str | float | int:
         return f"{expr.name}-{expr.flag}"
 
     elif isinstance(expr, Literal):
-        return literalValue(expr)
+        return expr.value
 
     raise TypeError("Invalid expression type")
 
@@ -48,14 +43,8 @@ def readData(filePath: str) -> None:
         for table in data.tables:
             if expressionValue(table.header.fields[1]) == 3 and expressionValue(table.header.fields[2]) == 2:
                 for term in table.terms:
-                    print([
-                        term.id,
-                        [literalValue(i) for i in term.coefficients],
-                        literalValue(term.sinMantissa),
-                        literalValue(term.cosMantissa),
-                        literalValue(term.sinExponent),
-                        literalValue(term.cosExponent)
-                    ])
+                    print([term.id, term.coefficients, term.sinMantissa, term.cosMantissa, term.sinExponent,
+                           term.cosExponent])
 
 
 if __name__ == '__main__':

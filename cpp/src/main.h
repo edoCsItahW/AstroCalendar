@@ -6,19 +6,22 @@
 // permission, please contact the author: 2207150234@st.sziit.edu.cn
 
 /**
- * @file constant.hpp
+ * @file main.h
  * @author edocsitahw
  * @version 1.1
- * @date 2025/08/01 14:29
+ * @date 2025/08/11 14:39
  * @brief
  * @copyright CC BY-NC-SA 2025. All rights reserved.
  * */
-#ifndef CONSTANT_HPP
-#define CONSTANT_HPP
+#ifndef MAIN_H
+#define MAIN_H
 #pragma once
 
+#include "src/ast.h"
+#include "constant.h"
+
 namespace astro {
+    LunarDate gregorianToLunar(const DateTime& gregorianDate, const reader::Data& data, const reader::Data& rData, const reader::Data& vData, const reader::Data& uData);
+}
 
-}  // namespace astro
-
-#endif  // CONSTANT_HPP
+#endif  // MAIN_H

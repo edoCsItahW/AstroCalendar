@@ -10,7 +10,8 @@
 # -------------------------<edocsitahw>----------------------------
 # file: __init__.py
 # author: edocsitahw
-# data: 2025/8/3 17:04
+# data: 2025/8/8 23:50
 # desc:
 # -------------------------<edocsitahw>----------------------------
-from .lea import *
+
+from . import dataReader

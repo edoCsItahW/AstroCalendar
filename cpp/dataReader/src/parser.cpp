@@ -18,168 +18,162 @@
 #include <format>
 #include <stdexcept>
 
-Parser::Parser(const std::vector<std::shared_ptr<Token>> &tokens)
-    : tokens(tokens) {}
+namespace astro::reader {
 
-std::shared_ptr<Token> Parser::current() { return inScope() ? tokens[idx] : nullptr; }
+    Parser::Parser(const std::vector<std::shared_ptr<Token>> &tokens)
+        : tokens(tokens) {}
 
-Data Parser::parse() {
-    Data data;
-#ifdef VSOP
-    while (inScope()) {
-        skip();
+    std::shared_ptr<Token> Parser::current() { return inScope() ? tokens[idx] : nullptr; }
 
-        if (auto table = parseTable()) data.tables.push_back(std::move(table));
-    }
-#elifdef LEA
-    while (inScope()) {
-        skip();
-
-        if (auto term = parseTerm()) data.terms.push_back(std::move(term));
-    }
-#else
-    #error "must define VSOP or LEA macro"
-#endif
-    return data;
-}
-
-#ifdef VSOP
-
-std::shared_ptr<Table> Parser::parseTable() {
-    Table table;
-
-    table.header = parseHeader();
-
-    skip();
-
-    while (inScope() && current()->type != TokenType::IDENTIFIER) {
-        if (auto term = parseTerm()) table.terms.push_back(std::move(term));
+    Data Parser::parse() {
+        Data data;
 
         skip();
-    }
 
-    return std::make_shared<Table>(std::move(table));
-}
-
-std::shared_ptr<Header> Parser::parseHeader() {
-    Header header;
-
-    skip();
-
-    while (inScope()) {
-        if (auto field = parseExpression()) {
-            header.fields.push_back(std::move(field));
-
-            if (!current() || current()->type == TokenType::NEWLINE) break;
+        if (current() && current()->type == TokenType::IDENTIFIER) {
+            type       = VSOP;
+            data.type_ = VSOP;
+        } else {
+            type       = LEA;
+            data.type_ = LEA;
         }
 
-        skip();
+        while (inScope()) {
+            skip();
+
+            if (data.type_ == VSOP) {
+                if (auto table = parseTable()) data.tables.push_back(std::move(table));
+            }
+
+            else if (auto term = parseTerm()) {
+                data.terms.push_back(std::move(term));
+
+                if (current() && current()->type == TokenType::NEWLINE) expect(TokenType::NEWLINE);
+            }
+        }
+
+        return data;
     }
 
-    return std::make_shared<Header>(std::move(header));
-}
+    std::shared_ptr<Table> Parser::parseTable() {
+        Table table;
 
-std::shared_ptr<Term> Parser::parseTerm() {
-    Term term;
+        table.header = parseHeader();
 
-    skip();
+        skip();
 
-    term.id = std::make_shared<Integer>(Integer{expect(TokenType::INT)->value});
+        while (inScope() && current()->type != TokenType::IDENTIFIER) {
+            if (auto term = parseTerm()) table.terms.push_back(std::move(term));
 
-    for (std::size_t i{}; i < 17; ++i)
-        if (auto item = parseLiteral()) term.coefficients.push_back(std::move(item));
+            skip();
+        }
 
-    term.sinMantissa = parseLiteral();
-    term.cosMantissa = parseLiteral();
-    term.sinExponent = parseLiteral();
-    term.cosExponent = parseLiteral();
+        return std::make_shared<Table>(std::move(table));
+    }
 
-    return std::make_shared<Term>(std::move(term));
-}
+    std::shared_ptr<Header> Parser::parseHeader() {
+        Header header;
 
-#elifdef LEA
+        skip();
 
-std::shared_ptr<Term> Parser::parseTerm() {
-    Term term;
+        while (inScope()) {
+            if (auto field = parseExpression()) {
+                header.fields.push_back(std::move(field));
 
-    skip();
+                if (!current() || current()->type == TokenType::NEWLINE) break;
+            }
 
-    term.id = std::make_shared<Integer>(Integer{expect(TokenType::INT)->value});
+            skip();
+        }
 
-    for (std::size_t i{}; i < 14; ++i)
-        if (auto item = parseLiteral()) term.coefficients.push_back(std::move(item));
+        return std::make_shared<Header>(std::move(header));
+    }
 
-    for (std::size_t i{}; i < 3; ++i)
-        if (auto item = parseLiteral()) term.amplitudes.push_back(std::move(item));
+    std::shared_ptr<Term> Parser::parseTerm() {
+        Term term;
 
-    for (std::size_t i{}; i < 3; ++i)
-        if (auto item = parseLiteral()) term.phases.push_back(std::move(item));
+        skip();
 
-    if (current() && current()->type == TokenType::NEWLINE) expect(TokenType::NEWLINE);
+        term.id = std::make_shared<Integer>(Integer{expect(TokenType::INT)->value});
 
-    return std::make_shared<Term>(std::move(term));
-}
+        for (std::size_t i{}; i < (type == VSOP ? 17 : 14); ++i)
+            if (auto item = parseLiteral()) term.coefficients.push_back(std::move(item));
 
+        if (type == VSOP) {
+            term.sinMantissa = parseLiteral();
+            term.sinExponent = parseLiteral();
+            term.cosMantissa = parseLiteral();
+            term.cosExponent = parseLiteral();
+        }
 
-#else
+        else {
+            for (std::size_t i{}; i < 3; ++i)
+                if (auto item = parseLiteral()) term.amplitudes.push_back(std::move(item));
 
-    #error "must define VSOP or LEA macro"
+            for (std::size_t i{}; i < 3; ++i)
+                if (auto item = parseLiteral()) term.phases.push_back(std::move(item));
+        }
 
-#endif
+        return std::make_shared<Term>(std::move(term));
+    }
 
-std::shared_ptr<Expression> Parser::parseExpression() {
-    switch (current()->type) {
-        using enum TokenType;
-        case IDENTIFIER: return parseIdentifier();
-        case MUL: return parseVariable();
-        default: {
-            auto l = parseLiteral();
-            return l;
+    std::shared_ptr<Expression> Parser::parseExpression() {
+        switch (current()->type) {
+            using enum TokenType;
+            case IDENTIFIER: return parseIdentifier();
+            case MUL: return parseVariable();
+            default: {
+                auto l = parseLiteral();
+                return l;
+            }
         }
     }
-}
 
-std::shared_ptr<Identifier> Parser::parseIdentifier() { return std::make_shared<Identifier>(Identifier{advance()->value}); }
+    std::shared_ptr<Identifier> Parser::parseIdentifier() { return std::make_shared<Identifier>(Identifier{advance()->value}); }
 
-std::shared_ptr<Variable> Parser::parseVariable() {
-    Variable variable;
+    std::shared_ptr<Variable> Parser::parseVariable() {
+        Variable variable;
 
-    expect(TokenType::MUL);
+        expect(TokenType::MUL);
 
-    variable.name = expect(TokenType::IDENTIFIER)->value;
+        variable.name = expect(TokenType::IDENTIFIER)->value;
 
-    expect(TokenType::MUL);
+        expect(TokenType::MUL);
 
-    variable.flag = expect(TokenType::INT)->value;
+        variable.flag = expect(TokenType::INT)->value;
 
-    return std::make_shared<Variable>(std::move(variable));
-}
-
-std::shared_ptr<Literal> Parser::parseLiteral() {
-    switch (current()->type) {
-        using enum TokenType;
-        case INT: return std::make_shared<Integer>(Integer{advance()->value});
-        case FLOAT: return std::make_shared<Float>(Float{advance()->value});
-        default: throw std::runtime_error(std::format("Literal: Unexpected token type {} at position {}", enumToStr(current()->type), idx));
+        return std::make_shared<Variable>(std::move(variable));
     }
-}
 
-std::shared_ptr<Token> Parser::advance() {
-    const auto token = current();
-    ++idx;
-    return std::make_shared<Token>(*token);
-}
+    std::shared_ptr<Literal> Parser::parseLiteral() {
+        skip();
 
-bool Parser::inScope() const noexcept { return idx < tokens.size() && tokens[idx] != nullptr && tokens[idx]->type != TokenType::END; }
+        switch (current()->type) {
+            using enum TokenType;
+            case INT: return std::make_shared<Integer>(Integer{advance()->value});
+            case FLOAT: return std::make_shared<Float>(Float{advance()->value});
+            default: throw std::runtime_error(std::format("Literal: Unexpected token type {} at position {}", enumToStr(current()->type), idx));
+        }
+    }
 
-std::shared_ptr<Token> Parser::expect(const TokenType type) {
-    if (type != TokenType::NEWLINE) skip();
+    std::shared_ptr<Token> Parser::advance() {
+        const auto token = current();
+        ++idx;
+        return std::make_shared<Token>(*token);
+    }
 
-    if (inScope() && type == current()->type) return advance();
+    bool Parser::inScope() const noexcept { return idx < tokens.size() && tokens[idx] != nullptr && tokens[idx]->type != TokenType::END; }
 
-    throw std::runtime_error(std::format("expect: Unexpected token type {} at position {}", enumToStr(current()->type), idx));
-}
+    std::shared_ptr<Token> Parser::expect(const TokenType type) {
+        if (type != TokenType::NEWLINE) skip();
 
-void Parser::skip() noexcept {
-    while (current() && current()->type == TokenType::NEWLINE) ++idx;
-}
+        if (inScope() && type == current()->type) return advance();
+
+        throw std::runtime_error(std::format("expect: Unexpected token type {} at position {} expected {}", enumToStr(current()->type), idx, enumToStr(type)));
+    }
+
+    void Parser::skip() noexcept {
+        while (current() && current()->type == TokenType::NEWLINE) ++idx;
+    }
+
+}  // namespace astro::reader

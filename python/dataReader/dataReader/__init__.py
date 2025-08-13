@@ -10,7 +10,7 @@
 # -------------------------<edocsitahw>----------------------------
 # file: __init__.py
 # author: edocsitahw
-# data: 2025/8/3 17:03
+# data: 2025/8/3 17:04
 # desc:
 # -------------------------<edocsitahw>----------------------------
-from .vsop import *
+from .dataReader import *

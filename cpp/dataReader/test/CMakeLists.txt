@@ -12,6 +12,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # include_directories()
 # link_directories()
 
+if (MSVC)
+    add_compile_options(/wd4819)
+
+endif ()
+
 add_executable(dataReader
         test.cpp
         ../src/lexer.cpp
@@ -20,12 +25,12 @@ add_executable(dataReader
         ../src/ast.cpp
 )
 
-option(USE_LEA "Use LEA implementation" OFF)
-option(USE_VSOP "Use VSOP implementation" ON)
-if (USE_LEA)
-    target_compile_definitions(dataReader PRIVATE LEA)
-elseif (USE_VSOP)
-    target_compile_definitions(dataReader PRIVATE VSOP)
-endif()
+#option(USE_LEA "Use LEA implementation" OFF)
+#option(USE_VSOP "Use VSOP implementation" ON)
+#if (USE_LEA)
+#    target_compile_definitions(dataReader PRIVATE LEA)
+#elseif (USE_VSOP)
+#    target_compile_definitions(dataReader PRIVATE VSOP)
+#endif()
 
 # target_link_libraries(MyTestExecutable PRIVATE ${Boost_LIBRARIES})

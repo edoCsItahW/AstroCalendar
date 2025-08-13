@@ -18,11 +18,13 @@
 #include <iostream>
 
 int main() {
+    using namespace astro::reader;
+
     std::ifstream file;
 
     // file.open(R"(test.dat)");
-    // file.open(R"(E:\code\astroCalendar\cpp\dataReader\test\lea_test.dat)");
-    file.open(R"(E:\code\astroCalendar\cpp\dataReader\test\vsop_test.dat)");
+    file.open(R"(E:\code\astroCalendar\data\LEA-406\table9.dat)");
+    // file.open(R"(E:\code\astroCalendar\cpp\dataReader\test\vsop_test.dat)");
 
     auto content = std::string(std::istreambuf_iterator(file), std::istreambuf_iterator<char>());
 

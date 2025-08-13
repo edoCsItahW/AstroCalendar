@@ -22,40 +22,43 @@
 #include <string>
 #include <vector>
 
-enum class TokenType { INT, FLOAT, IDENTIFIER, MUL, NEWLINE, END };
+namespace astro::reader {
+    enum class TokenType { INT, FLOAT, IDENTIFIER, MUL, NEWLINE, END };
 
-struct Token {
-    TokenType type;
-    std::string value;
+    struct Token {
+        TokenType type;
+        std::string value;
 
-    [[nodiscard]] std::string toString() const;
+        [[nodiscard]] std::string toString() const;
 
-    friend std::ostream &operator<<(std::ostream &os, const Token &token);
-};
+        friend std::ostream &operator<<(std::ostream &os, const Token &token);
+    };
 
-class Lexer {
-public:
-    Lexer(const std::string &);
+    class Lexer {
+    public:
+        Lexer(const std::string &);
 
-    Token next() const;
+        Token next() const;
 
-    static std::vector<std::shared_ptr<Token>> tokenize(const std::string &);
+        static std::vector<std::shared_ptr<Token>> tokenize(const std::string &);
 
-private:
-    std::string src;
-    mutable std::size_t idx;
+    private:
+        std::string src;
+        mutable std::size_t idx;
 
-    Token extractIdentifier() const;
+        Token extractIdentifier() const;
 
-    Token extractNumber() const;
+        Token extractNumber() const;
 
-    std::optional<char> current() const;
+        std::optional<char> current() const;
 
-    std::optional<char> peek(int offset = 1) const;
+        std::optional<char> peek(int offset = 1) const;
 
-    bool inScope() const noexcept;
+        bool inScope() const noexcept;
 
-    void skip() const;
-};
+        void skip() const;
+    };
+}  // namespace astro::reader
+
 
 #endif  // LEXER_H

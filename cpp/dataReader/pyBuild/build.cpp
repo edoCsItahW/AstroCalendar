@@ -14,9 +14,8 @@
  * @copyright CC BY-NC-SA 2025. All rights reserved.
  * */
 #include "../src/parser.h"
+#include "../src/utils.h"
 #include <format>
-#include <fstream>
-#include <iostream>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -28,10 +27,38 @@ Data parse(const std::string &src) {
     return Parser(tokens).parse();
 }
 
-PYBIND11_MODULE(vsop, m) {
-    m.doc() = R"(A module for reading VSOP2013 data files, it includes a parser and a lexer for VSOP2013 data files.)";
+py::object variantToObj(const LiteralValue &value) {
+    return std::visit([](auto &&arg) -> py::object { return py::cast(arg); }, value);
+}
 
-    m.def("parse", &parse, R"(Parse a VSOP2013 data file and return a Data object.)");
+py::list variantToList(const std::vector<std::shared_ptr<Literal>> &values) {
+    py::list result;
+
+    for (const auto &value : values) result.append(variantToObj(value->value()));
+
+    return result;
+}
+
+#define ATTR_HANDLER_WHEN(field, base, tp)                                                                                                                                                             \
+    #field, [](const base &self) {                                                                                                                                                                     \
+        if (type != tp) throw py::value_error("Data object is not a " #tp " data file.");                                                                                                              \
+        return variantToObj(self.field->value());                                                                                                                                                      \
+    }
+
+#define ATTR_HANDLER(field, base) #field, [](const base &self) { return variantToObj(self.field->value()); }
+
+#define ATTR_HANDLER_LIST_WHEN(field, base, tp)                                                                                                                                                        \
+    #field, [](const base &self) {                                                                                                                                                                     \
+        if (type != tp) throw py::value_error("Data object is not a " #tp " data file.");                                                                                                              \
+        return variantToList(self.field);                                                                                                                                                              \
+    }
+
+#define ATTR_HANDLER_LIST(field, base) #field, [](const base &self) { return variantToList(self.field); }
+
+PYBIND11_MODULE(dataReader, m) {
+    m.doc() = R"(A module for reading VSOP2013 or LEA-406 data files, it includes a parser and a lexer for VSOP2013 and LEA-406 data files.)";
+
+    m.def("parse", &parse, R"(Parse a VSOP2013 or LEA-406 data file and return a Data object.)");
 
     py::enum_<TokenType>(m, "TokenType")
         .value("INT", TokenType::INT)
@@ -62,48 +89,34 @@ PYBIND11_MODULE(vsop, m) {
     py::class_<Data, AST, py::smart_holder>(m, "Data")
         .def(py::init())
         .def_readonly("nodeName", &Data::nodeName)
-#ifdef VSOP
         .def_readonly("tables", &Data::tables)
-#elifdef LEA
         .def_readonly("terms", &Data::terms)
-#else
-    #error "must define VSOP or LEA macro"
-#endif
         .def("toJSON", &Data::toJSON, "Convert the Data object to a JSON string.");
 
-#ifdef VSOP
     py::class_<Table, AST, py::smart_holder>(m, "Table")
         .def(py::init())
         .def_readonly("nodeName", &Table::nodeName)
         .def_readonly("header", &Table::header)
         .def_readonly("terms", &Table::terms)
         .def("toJSON", &Table::toJSON, "Convert the Table object to a JSON string.");
-#endif
 
-#ifdef VSOP
     py::class_<Header, AST, py::smart_holder>(m, "Header")
         .def(py::init())
         .def_readonly("nodeName", &Header::nodeName)
         .def_readonly("fields", &Header::fields)
         .def("toJSON", &Header::toJSON, "Convert the Header object to a JSON string.");
-#endif
 
     py::class_<Term, AST, py::smart_holder>(m, "Term")
         .def(py::init())
         .def_readonly("nodeName", &Term::nodeName)
-        .def_property_readonly("id", [](const Term &self) { return std::stoi(self.id->value()); })
-        .def_readonly("coefficients", &Term::coefficients)
-#ifdef VSOP
-        .def_readonly("sinMantissa", &Term::sinMantissa)
-        .def_readonly("cosMantissa", &Term::cosMantissa)
-        .def_readonly("sinExponent", &Term::sinExponent)
-        .def_readonly("cosExponent", &Term::cosExponent)
-#elifdef LEA
-        .def_readonly("amplitudes", &Term::amplitudes)
-        .def_readonly("phases", &Term::phases)
-#else
-    #error "must define VSOP or LEA macro"
-#endif
+        .def_property_readonly(ATTR_HANDLER(id, Term))
+        .def_property_readonly(ATTR_HANDLER_LIST(coefficients, Term))
+        .def_property_readonly(ATTR_HANDLER(sinMantissa, Term))
+        .def_property_readonly(ATTR_HANDLER(cosMantissa, Term))
+        .def_property_readonly(ATTR_HANDLER(sinExponent, Term))
+        .def_property_readonly(ATTR_HANDLER(cosExponent, Term))
+        .def_property_readonly(ATTR_HANDLER_LIST(amplitudes, Term))
+        .def_property_readonly(ATTR_HANDLER_LIST(phases, Term))
         .def("toJSON", &Term::toJSON, "Convert the Term object to a JSON string.");
 
     py::class_<Expression, AST, py::smart_holder>(m, "Expression");
@@ -126,16 +139,12 @@ PYBIND11_MODULE(vsop, m) {
     py::class_<Integer, Literal, py::smart_holder>(m, "Integer")
         .def(py::init([](const py::int_ &value) { return Integer(std::to_string(value.cast<int>())); }), py::arg("value"))
         .def_readonly("nodeName", &Integer::nodeName)
-        .def_property(
-            "value", [](const Integer &self) { return std::stoi(self.value()); }, [](Integer &self, int value) { self.value_ = std::to_string(value); }
-        )
+        .def_property_readonly("value", [](const Integer &self) { return variantToObj(self.value()); })
         .def("toJSON", &Integer::toJSON, "Convert the Integer object to a JSON string.");
 
     py::class_<Float, Literal, py::smart_holder>(m, "Float")
         .def(py::init([](const py::float_ &value) { return Float(std::to_string(value.cast<double>())); }), py::arg("value"))
         .def_readonly("nodeName", &Float::nodeName)
-        .def_property(
-            "value", [](const Float &self) { return std::stod(self.value()); }, [](Float &self, double value) { self.value_ = std::to_string(value); }
-        )
+        .def_property_readonly("value", [](const Float &self) { return variantToObj(self.value()); })
         .def("toJSON", &Float::toJSON, "Convert the Float object to a JSON string.");
 }

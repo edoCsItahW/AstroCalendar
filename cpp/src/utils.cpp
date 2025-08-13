@@ -9,9 +9,12 @@
  * @file utils.cpp
  * @author edocsitahw
  * @version 1.1
- * @date 2025/05/29 17:08
+ * @date 2025/08/10 16:37
  * @brief
  * @copyright CC BY-NC-SA 2025. All rights reserved.
  * */
 #include "utils.h"
 
+namespace astro {
+
+}  // namespace astro

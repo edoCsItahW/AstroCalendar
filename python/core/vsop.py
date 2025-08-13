@@ -14,9 +14,9 @@
 # desc:
 # -------------------------<edocsitahw>----------------------------
 
-from constant import JulianDay, TimeScale
-from ..dataReader.vsopDataReader import Data, Term
-from math import sin, cos, atan2, sqrt, asin, tan
+from .constant import JulianDay, TimeScale, binPow
+from python.dataReader.dataReader import *
+from math import sin, cos, atan2, sqrt, asin, nan, inf
 
 LAMBDA_TABLE = [
     lambda T: 4.402608631669 + 26087.90314068555 * T,
@@ -42,12 +42,15 @@ def phi(t: float, data: list[float]) -> float:
     return sum(c * f(t) for c, f in zip(data, LAMBDA_TABLE))
 
 def calcSeries(t: float, data: Term) -> float:
-    p = phi(t, [c.value for c in data.coefficients])
+    p = phi(t, data.coefficients)
 
-    return data.sinMantissa.value * 10 ** data.sinExponent.value * sin(p) * data.cosMantissa.value * 10 ** data.cosExponent.value * cos(p)
+    return data.sinMantissa * binPow(10, int(data.sinExponent)) * sin(p) + data.cosMantissa * binPow(10, int(data.cosExponent)) * cos(p)
 
 def vsop2013(jd: JulianDay, data: Data) -> tuple[float, float, float]:
-    tdb = jd.convert(TimeScale.TDB).value
+    tdb = jd.convert(TimeScale.TDB).value / 365250
+
+    if abs(tdb) > 100:
+        raise ValueError(f"时间超出VSOP2013支持范围: t={tdb * 1000:.0f}年")
 
     varMap = {k: 0 for k in "alkhpq"}
 
@@ -57,13 +60,17 @@ def vsop2013(jd: JulianDay, data: Data) -> tuple[float, float, float]:
         key = int(table.header.fields[2].value)
 
         for i, term in enumerate(table.terms, start=1):
-            varMap[keyMap[key]] += tdb ** i * calcSeries(tdb, term)
+            result = binPow(tdb, i) * calcSeries(tdb, term)
+            if result == nan or varMap[keyMap[key]] == nan or abs(result) == inf:
+                raise ValueError(f"第{i}项计算结果为nan")
+            print(f"结果为{result}, 此时{keyMap[key]}的值为{varMap[keyMap[key]]}")
+            varMap[keyMap[key]] += result
 
     a, l, k, h, p, q = varMap.values()
 
     e = sqrt(k ** 2 + h ** 2)
-    p = atan2(h, k)
-    m = l - p
+    peri = atan2(h, k)
+    m = l - peri
     i = 2 * asin(sqrt(q ** 2 + p ** 2))
     o = atan2(p, q)
 
@@ -71,15 +78,15 @@ def vsop2013(jd: JulianDay, data: Data) -> tuple[float, float, float]:
     diffEqE = lambda x: 1 - e * cos(x)
 
     E = m + e * sin(m)
-    while abs((E2 := E - eqE(E) / diffEqE(E)) - E < 1e-12):
+    while abs((E2 := (E - eqE(E) / diffEqE(E))) - E > 1e-12):
         E = E2
 
-    v = 2 * atan2(sqrt((1 + e) / (1 - e)) * tan(E / 2))
+    v = 2 * atan2(sqrt(1 + e) * sin(E/2), sqrt(1 - e) * cos(E/2))
     r = a * (1 - e ** 2) / (1 + e * cos(v))
 
     x, y, z = r * cos(v), r * sin(v), 0
 
-    t = p - o + v
+    t = peri - v
     x = r * (cos(o) * cos(t) - sin(o) * sin(t) * cos(i))
     y = r * (sin(o) * cos(t) - cos(o) * sin(t) * cos(i))
     z = r * sin(t) * sin(i)

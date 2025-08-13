@@ -18,92 +18,94 @@
 #include <format>
 #include <iostream>
 
-std::ostream &operator<<(std::ostream &os, const Token &token) {
-    os << token.toString();
-    return os;
-}
-
-std::string Token::toString() const { return std::format("Token<{}>('{}')", enumToStr(type), value); }
-
-Lexer::Lexer(const std::string &src)
-    : src(src)
-    , idx(0) {}
-
-Token Lexer::next() const {
-    skip();
-
-    const auto c = current();
-
-    if (!c) return {TokenType::END, ""};
-
-    if (*c == '\n') {
-        ++idx;
-        return {TokenType::NEWLINE, "\\n"};
+namespace astro::reader {
+    std::ostream &operator<<(std::ostream &os, const Token &token) {
+        os << token.toString();
+        return os;
     }
 
-    if (isLetter(*c)) return extractIdentifier();
+    std::string Token::toString() const { return std::format("Token<{}>('{}')", enumToStr(type), value); }
 
-    if (isDigit(*c) || ((*c == '-' || *c == '+') && peek() && isDigit(*peek()))) return extractNumber();
+    Lexer::Lexer(const std::string &src)
+        : src(src)
+        , idx(0) {}
 
-    if (*c == '*') {
-        ++idx;
-        return {TokenType::MUL, "*"};
-    }
+    Token Lexer::next() const {
+        skip();
 
-    throw std::runtime_error(std::format("Unexpected character '{}' at position {}", *c, idx));
-}
+        const auto c = current();
 
-Token Lexer::extractIdentifier() const {
-    std::string value;
+        if (!c) return {TokenType::END, ""};
 
-    while (current() && (isalnum(*current()) || *current() == '-')) value += src[idx++];
-
-    return {TokenType::IDENTIFIER, value};
-}
-
-Token Lexer::extractNumber() const {
-    std::string value;
-    bool isFloat = false;
-
-    if (current() && (*current() == '-' || *current() == '+')) value += src[idx++];
-
-    while (current() && (isDigit(*current()) || *current() == '.')) {
-        if (*current() == '.') {
-            if (isFloat) throw std::runtime_error(std::format("Multiple decimal points in number at position {}", idx));
-
-            isFloat = true;
+        if (*c == '\n') {
+            ++idx;
+            return {TokenType::NEWLINE, "\\n"};
         }
 
-        value += src[idx++];
+        if (isLetter(*c)) return extractIdentifier();
+
+        if (isDigit(*c) || ((*c == '-' || *c == '+') && peek() && isDigit(*peek()))) return extractNumber();
+
+        if (*c == '*') {
+            ++idx;
+            return {TokenType::MUL, "*"};
+        }
+
+        throw std::runtime_error(std::format("Unexpected character '{}' at position {}", *c, idx));
     }
 
-    return {isFloat ? TokenType::FLOAT : TokenType::INT, value};
-}
+    Token Lexer::extractIdentifier() const {
+        std::string value;
 
-std::optional<char> Lexer::current() const {
-    if (inScope()) return src[idx];
+        while (current() && (isalnum(*current()) || *current() == '-')) value += src[idx++];
 
-    return std::nullopt;
-}
+        return {TokenType::IDENTIFIER, value};
+    }
 
-std::optional<char> Lexer::peek(int offset) const {
-    if (idx + offset < src.size()) return src[idx + offset];
+    Token Lexer::extractNumber() const {
+        std::string value;
+        bool isFloat = false;
 
-    return std::nullopt;
-}
+        if (current() && (*current() == '-' || *current() == '+')) value += src[idx++];
 
-bool Lexer::inScope() const noexcept { return idx < src.size(); }
+        while (current() && (isDigit(*current()) || *current() == '.')) {
+            if (*current() == '.') {
+                if (isFloat) throw std::runtime_error(std::format("Multiple decimal points in number at position {}", idx));
 
-void Lexer::skip() const {
-    while (inScope() && isWhitespace(*current()) && *current() != '\n') idx++;
-}
+                isFloat = true;
+            }
 
-std::vector<std::shared_ptr<Token>> Lexer::tokenize(const std::string &src) {
-    const Lexer lexer(src);
-    std::vector<std::shared_ptr<Token>> tokens;
-    std::shared_ptr<Token> token;
+            value += src[idx++];
+        }
 
-    while ((token = std::make_shared<Token>(lexer.next()))->type != TokenType::END) tokens.push_back(std::move(token));
+        return {isFloat ? TokenType::FLOAT : TokenType::INT, value};
+    }
 
-    return tokens;
-}
+    std::optional<char> Lexer::current() const {
+        if (inScope()) return src[idx];
+
+        return std::nullopt;
+    }
+
+    std::optional<char> Lexer::peek(int offset) const {
+        if (idx + offset < src.size()) return src[idx + offset];
+
+        return std::nullopt;
+    }
+
+    bool Lexer::inScope() const noexcept { return idx < src.size(); }
+
+    void Lexer::skip() const {
+        while (inScope() && isWhitespace(*current()) && *current() != '\n') idx++;
+    }
+
+    std::vector<std::shared_ptr<Token>> Lexer::tokenize(const std::string &src) {
+        const Lexer lexer(src);
+        std::vector<std::shared_ptr<Token>> tokens;
+        std::shared_ptr<Token> token;
+
+        while ((token = std::make_shared<Token>(lexer.next()))->type != TokenType::END) tokens.push_back(std::move(token));
+
+        return tokens;
+    }
+}  // namespace astro::reader

@@ -15,14 +15,16 @@
 # -------------------------<edocsitahw>----------------------------
 
 
-__all__ = ['TimeScale', 'JulianDay', 'J2000', 'leapSeconds']
-
+__all__ = ['TimeScale', 'JulianDay', 'J2000', 'leapSeconds', 'binPow']
 
 from enum import Enum
 from typing import Self, overload
 from fractions import Fraction
 from datetime import datetime, timezone
 from math import inf, radians, cos, sin
+from sys import setrecursionlimit
+
+setrecursionlimit(10 ** 6)
 
 
 class TimeScale(Enum):
@@ -107,7 +109,6 @@ class JulianDay:
 
         return datetime(year, month, day, hour, minute, second, tzinfo=timezone.utc)
 
-
     @staticmethod
     def fromDatetime(dt: datetime) -> 'JulianDay':
         y = dt.year + 1 if dt.year < 0 else dt.year
@@ -124,6 +125,9 @@ class JulianDay:
         JD = int(365.25 * (y + 4716)) + int(30.6001 * (m + 1)) + d + B - 1524.5
 
         return JulianDay(JD + (dt.hour - 12) / 24 + dt.minute / 1440 + dt.second / 86400, TimeScale.UTC)
+
+    def __repr__(self) -> str:
+        return f"JulianDay({self.value}, {self._scale.name})"
 
 
 J2000 = JulianDay(2451545.0, TimeScale.TT)
@@ -142,9 +146,11 @@ def leapSeconds[T: float | int | Fraction](value: T) -> T:
     raise ValueError(  # 年份超出范围
         f"Year {dt.year} is out of range")
 
+
 def calcG[T: float | int | Fraction](value: T) -> T:
     century = (value - J2000.value) / 36525.0
     return radians(357.5291092 + 35999.05034 * century)
+
 
 def diffDeltaT[T: float | int | Fraction](value: T) -> T:
     G = calcG(value)
@@ -153,10 +159,12 @@ def diffDeltaT[T: float | int | Fraction](value: T) -> T:
 
     return 0.001658 * cos(G + 0.0167 * sin(G)) * (1 + 0.0167 * cos(G)) * gDiff
 
+
 def deltaT[T: float | int | Fraction](value: T) -> T:
     G = calcG(value)
 
     return 0.001658 * sin(G + 0.0167 * sin(G))
+
 
 def TAI2UTC[T: float | int | Fraction](value: T) -> T:
     return value - leapSeconds(value)
@@ -181,6 +189,7 @@ def TDB2TT[T: float | int | Fraction](value: T) -> T:
         prev = new
 
     return new
+
 
 def TT2TDB[T: float | int | Fraction](value: T) -> T:
     return value + deltaT(value)
@@ -236,6 +245,18 @@ def toTDB[T: float | int | Fraction](value: T, fromScale: TimeScale = TimeScale.
         case _:
             raise ValueError(  # 错误类型
                 "Invalid time scale")
+
+
+def binPow(x: float, n: int) -> float:
+    res = 1
+    while n > 0:
+        if n & 1:
+            res *= x
+
+        x *= x
+        n >>= 1
+
+    return res
 
 
 if __name__ == '__main__':
